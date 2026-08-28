@@ -6,6 +6,7 @@ import './cycle1.css'
 import './practice.css'
 import './cycle2.css'
 import './workshop.css'
+import './analyst.css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
