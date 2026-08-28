@@ -22,7 +22,7 @@ jobs:
           python-version: '3.13'
       - name: Fetch ten Bundesliga matches
         run: python scripts/fetch-statsbomb-sample.py 9 281 --limit 10
-      - name: Generate teaching dataset
+      - name: Generate teaching dataset with raw excerpts
         run: python scripts/prepare-shots.py data/raw/statsbomb/9/281/events/*.json -o src/data/statsbomb-shots.generated.json
       - name: Commit generated sample
         run: |
