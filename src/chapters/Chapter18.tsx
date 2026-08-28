@@ -46,17 +46,17 @@ export function Chapter18({ step, setStep, onComplete }: Props) {
   if (step === 0) return (
     <LabShell visual={<div className="whatif-intro"><span>Tir réel</span><strong>14m · 28°</strong><b>→ change une chose →</b><span>Nouveau scénario</span><strong>9m · 28°</strong></div>}>
       <Eyebrow>Chapitre 18 · What-if Lab</Eyebrow>
-      <h1>Tu peux maintenant interroger le modèle.</h1>
-      <p className="lead">Au lieu d’attendre des erreurs, prends un tir et pose des questions : « même tir mais 5 mètres plus près ? », « même position mais de la tête ? », « et si c’était un penalty ? ».</p>
-      <div className="intent-card"><strong>Attention</strong><span>Tu observes la réaction du modèle, pas une vérité causale sur le football. Le modèle répond selon les relations qu’il a apprises dans ces données.</span></div>
+      <h1>Que répond le modèle si on modifie une caractéristique du tir&nbsp;?</h1>
+      <p className="lead">Prends un tir réel, change une seule information — par exemple la distance — et regarde comment les probabilités des trois modèles bougent.</p>
+      <div className="intent-card"><strong>Attention</strong><span>C’est une analyse du comportement du modèle, pas la preuve qu’un changement causerait réellement le même effet sur le terrain.</span></div>
       <ContinueButton onClick={() => setStep(1)}>Ouvrir le simulateur</ContinueButton>
     </LabShell>
   )
 
   if (step === 1) return (
     <LabShell visual={<WhatIfScoreboard probabilities={probabilities} />}>
-      <Eyebrow>Chapitre 18 · Sensitivity analysis</Eyebrow>
-      <h1>Change le scénario et regarde les trois modèles réagir.</h1>
+      <Eyebrow>Chapitre 18 · Sensibilité</Eyebrow>
+      <h1>Change une seule chose et observe.</h1>
       <div className="shot-tabs">{sampleShots.map((shot, index) => <button key={shot.id} className={selectedIndex === index ? 'selected' : ''} onClick={() => chooseShot(index)}>Tir {index + 1}<small>{shot.provenance?.player ?? 'joueur'} · {shot.goal ? 'but' : 'raté'}</small></button>)}</div>
       <div className="whatif-controls">
         <label><span>Distance · {distance.toFixed(1)} m</span><input type="range" min="3" max="35" step="0.5" value={distance} onChange={(event) => { setDistance(Number(event.target.value)); touch() }} /></label>
@@ -66,19 +66,20 @@ export function Chapter18({ step, setStep, onComplete }: Props) {
         <button className={pressure ? 'selected' : ''} onClick={() => { setPressure((value) => !value); touch() }}>Sous pression {pressure ? '✓' : ''}</button>
         <button className={firstTime ? 'selected' : ''} onClick={() => { setFirstTime((value) => !value); touch() }}>Première intention {firstTime ? '✓' : ''}</button>
       </div>
-      <div className="intent-card"><strong>Expériences utiles</strong><span>Garde tout fixe et ne change que la distance. Puis remets le tir réel et change seulement la partie du corps. Compare ensuite avec un autre tir de base.</span></div>
-      <p className="practice-gate">{changes < 6 ? `Fais encore ${6 - changes} modification(s).` : visited.length < 2 ? 'Essaie maintenant un deuxième tir réel.' : 'Tu as suffisamment interrogé les modèles.'}</p>
-      {changes >= 6 && visited.length >= 2 && <ContinueButton onClick={() => setStep(2)}>Comprendre ce type d’analyse</ContinueButton>}
+      <div className="plain-explanation"><strong>Lecture</strong><span>Les trois modèles peuvent réagir différemment au même changement parce qu’ils n’ont pas appris la relation de la même manière.</span></div>
+      {changes > 0 && <>
+        <div className="optional-challenge"><strong>Exploration optionnelle</strong><span>{visited.length > 1 ? 'Tu as déjà essayé plusieurs tirs de départ.' : 'Essaie un autre tir de départ ou change une autre feature si tu veux comparer davantage.'}</span></div>
+        <ContinueButton onClick={() => setStep(2)}>J’ai compris le principe du What-if</ContinueButton>
+      </>}
     </LabShell>
   )
 
   return (
     <LabShell visual={<WhatIfScoreboard probabilities={probabilities} />}>
-      <Eyebrow>Chapitre 18 · Interpréter par perturbation</Eyebrow>
-      <h1>Tu viens de faire une analyse de sensibilité.</h1>
-      <p className="lead">En modifiant une entrée tout en gardant les autres constantes, tu observes comment la prédiction répond. Les différentes familles peuvent réagir très différemment au même changement.</p>
-      <div className="reveal-card"><span>Pratique débloquée</span><strong>What-if / sensitivity analysis : perturber les features pour comprendre le comportement d’un modèle. Ce n’est pas automatiquement une preuve de causalité.</strong></div>
-      <div className="checkpoint"><span>Prochaine étape</span><strong>Utiliser ton modèle non plus tir par tir, mais sur un match complet.</strong></div>
+      <Eyebrow>Chapitre 18 · Analyse de sensibilité</Eyebrow>
+      <h1>Tu as perturbé les entrées pour observer la réaction du modèle.</h1>
+      <p className="lead">C’est utile pour comprendre son comportement : quelles features font bouger fortement une prédiction, et lesquelles semblent peu changer ce cas précis.</p>
+      <div className="reveal-card"><span>Limite importante</span><strong>Une réaction du modèle n’est pas automatiquement une relation causale dans le monde réel.</strong></div>
       <ContinueButton onClick={onComplete}>Construire un xG de match</ContinueButton>
     </LabShell>
   )
