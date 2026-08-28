@@ -9,6 +9,7 @@ import './workshop.css'
 import './analyst.css'
 import './bridge.css'
 import './concrete11.css'
+import './pedagogy-pass.css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
