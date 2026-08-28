@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { ContinueButton, Eyebrow, LabShell } from '../components/LabShell'
 import { ModelWorkbenchControls } from '../components/ModelWorkbench'
 import { realShots } from '../data/realShots'
