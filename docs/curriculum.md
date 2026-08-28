@@ -57,7 +57,7 @@ Experience:
 
 Concepts unlocked:
 - probabilistic prediction;
-- calibration intuition (without claiming the seed model is calibrated);
+- calibration intuition without claiming the seed model is calibrated;
 - xG as per-shot goal probability and sum of shot probabilities.
 
 ### 06 — Distrust perfect scores
@@ -82,16 +82,49 @@ Concepts unlocked:
 - hyperparameter;
 - model comparison as behaviour + unseen-data evaluation, not train score.
 
-## Next staircase
+## Cycle 2 — From a model that runs to an experiment you can trust
 
-The next cycle should move from the pedagogical seed to sourced football data without abandoning the learning sequence.
+Detailed shaping lives in `docs/cycle-2.md`. The intended staircase is:
 
-Candidate topics:
-- inspect a real StatsBomb shot distribution;
-- data cleaning and missing values;
-- feature engineering from event data;
-- calibration plots and Brier/log loss after probability intuition is secure;
-- richer xG baseline;
-- cross-validation once the learner has felt split variance;
-- model interpretation and error slices;
-- only later: clustering, player similarity, dimensionality, trees/boosting, richer event sequences.
+### 08 — 90% correct. Is that actually good?
+- class imbalance;
+- naive baseline;
+- confusion matrix;
+- false positives / false negatives;
+- precision and recall only after the error types are intuitive.
+
+### 09 — Where did our data actually come from?
+- move from pedagogical seed to sourced StatsBomb Open Data;
+- raw event vs model-ready row;
+- provenance;
+- preprocessing, derived features and missing values.
+
+### 10 — Which information deserves to become a feature?
+- richer prediction-time football features;
+- categorical encoding intuition;
+- one-feature-at-a-time comparisons;
+- ablation and unseen-data evaluation.
+
+### 11 — If the model says 30%, does 30% really happen?
+- calibration;
+- reliability diagram;
+- probability quality vs classification quality;
+- Brier score only as optional technical depth.
+
+### 12 — One train/test split was lucky. Now what?
+- repeated validation;
+- folds;
+- cross-validation;
+- mean performance and variability;
+- fair model comparison using the same evaluation protocol.
+
+## Later cycles
+
+Only after Cycle 2 is understood should the curriculum widen toward:
+- decision trees;
+- random forests / gradient boosting;
+- feature importance and richer model interpretation;
+- clustering;
+- player similarity;
+- dimensionality reduction;
+- richer event sequences or tracking data.
