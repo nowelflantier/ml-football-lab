@@ -23,6 +23,7 @@ import type { ChapterId, Progress } from './types'
 
 const STORAGE_KEY = 'ml-football-lab-progress-v1'
 const LEGACY_STORAGE_KEY = 'ml-football-lab-progress-v0'
+const GUIDED_COUNT = 12
 const CHAPTER_COUNT = 20
 
 const defaultProgress: Progress = {
@@ -67,13 +68,13 @@ const chapterMeta = [
   { id: 3, short: '03', title: 'Décrire', subtitle: 'Choisir des features' },
   { id: 4, short: '04', title: 'Tester', subtitle: 'Train / test' },
   { id: 5, short: '05', title: 'Probabiliser', subtitle: 'Comprendre le xG' },
-  { id: 6, short: '06', title: 'Déjouer', subtitle: 'Overfitting & leakage' },
-  { id: 7, short: '07', title: 'Comparer', subtitle: 'Premier mini-labo' },
+  { id: 6, short: '06', title: 'Comprendre', subtitle: 'Trois façons de prédire' },
+  { id: 7, short: '07', title: 'Surapprendre', subtitle: 'Trop coller aux exemples' },
   { id: 8, short: '08', title: 'Mesurer', subtitle: 'Baseline & erreurs' },
   { id: 9, short: '09', title: 'Préparer', subtitle: 'Vraies données source' },
-  { id: 10, short: '10', title: 'Enrichir', subtitle: 'Feature engineering' },
-  { id: 11, short: '11', title: 'Comprendre', subtitle: 'Modèles & mesures' },
-  { id: 12, short: '12', title: 'Valider', subtitle: 'Cross-validation' },
+  { id: 10, short: '10', title: 'Enrichir', subtitle: 'Features & fuite' },
+  { id: 11, short: '11', title: 'Calibrer', subtitle: 'Quand 20% veut dire 20%' },
+  { id: 12, short: '12', title: 'Valider', subtitle: 'Répéter le test' },
   { id: 13, short: '13', title: 'Arborer', subtitle: 'Decision tree' },
   { id: 14, short: '14', title: 'Régler', subtitle: 'Validation & tuning' },
   { id: 15, short: '15', title: 'Construire', subtitle: 'Model Workshop' },
@@ -95,7 +96,14 @@ export default function App() {
     () => Math.min(CHAPTER_COUNT, Math.max(1, ...progress.completed.map((chapter) => chapter + 1))),
     [progress.completed],
   )
+  const guidedComplete = progress.completed.includes(GUIDED_COUNT)
+  const visibleProgressCount = guidedComplete
+    ? progress.completed.length
+    : progress.completed.filter((chapter) => chapter <= GUIDED_COUNT).length
+  const visibleProgressTotal = guidedComplete ? CHAPTER_COUNT : GUIDED_COUNT
   const finished = progress.completed.includes(CHAPTER_COUNT) && progress.chapter === CHAPTER_COUNT
+  const workshopUnlocked = maxUnlocked >= 13
+  const analystUnlocked = maxUnlocked >= 17
 
   const update = (patch: Partial<Progress>) => setProgress((current) => ({ ...current, ...patch }))
 
@@ -164,26 +172,41 @@ export default function App() {
           <span className="brand-mark">ML</span>
           <span><strong>Football Lab</strong><small>apprendre en manipulant</small></span>
         </button>
-        <div className="top-progress" aria-label={`${progress.completed.length} chapitres terminés sur ${CHAPTER_COUNT}`}>
-          <span>{progress.completed.length}/{CHAPTER_COUNT}</span>
-          <div><i style={{ width: `${(progress.completed.length / CHAPTER_COUNT) * 100}%` }} /></div>
+        <div className="top-progress" aria-label={`${visibleProgressCount} chapitres terminés sur ${visibleProgressTotal}`}>
+          <span>{visibleProgressCount}/{visibleProgressTotal}{!guidedComplete ? ' guidé' : ''}</span>
+          <div><i style={{ width: `${(visibleProgressCount / visibleProgressTotal) * 100}%` }} /></div>
         </div>
         <button className="reset-button" onClick={reset}>Tout recommencer</button>
       </header>
 
       <div className="workspace">
         <aside className="chapter-nav">
-          <div className="nav-heading">Cycle 1 · Du problème au modèle</div>
-          {chapterMeta.slice(0, 7).map(renderChapterLink)}
-          <div className="nav-heading cycle-two-heading">Cycle 2 · Rendre l’expérience crédible</div>
-          {chapterMeta.slice(7, 12).map(renderChapterLink)}
-          <div className="nav-heading cycle-two-heading">Cycle 3 · Model Workshop</div>
-          {chapterMeta.slice(12, 16).map(renderChapterLink)}
-          <div className="nav-heading cycle-two-heading">Cycle 4 · Football Analyst Mode</div>
-          {chapterMeta.slice(16).map(renderChapterLink)}
+          <div className="nav-heading">Parcours guidé · Comprendre une prédiction</div>
+          {chapterMeta.slice(0, 6).map(renderChapterLink)}
+          <div className="nav-heading cycle-two-heading">Parcours guidé · Faire confiance à l’expérience</div>
+          {chapterMeta.slice(6, 12).map(renderChapterLink)}
+
+          {workshopUnlocked ? (
+            <>
+              <div className="nav-heading cycle-two-heading">Ateliers avancés · Model Workshop</div>
+              {chapterMeta.slice(12, 16).map(renderChapterLink)}
+            </>
+          ) : (
+            <LockedCycle title="Model Workshop" copy="4 ateliers se débloquent après le chapitre 12." />
+          )}
+
+          {analystUnlocked ? (
+            <>
+              <div className="nav-heading cycle-two-heading">Pratique ouverte · Football Analyst</div>
+              {chapterMeta.slice(16).map(renderChapterLink)}
+            </>
+          ) : workshopUnlocked ? (
+            <LockedCycle title="Football Analyst" copy="4 analyses ouvertes se débloquent après le workshop." />
+          ) : null}
+
           <div className="nav-footer">
             <span className="status-dot" />
-            <span>Modèles exécutés dans le navigateur<br />StatsBomb réel · 297 tirs · 10 matchs</span>
+            <span>Parcours guidé d’abord<br />Ateliers ensuite · StatsBomb réel</span>
           </div>
         </aside>
 
@@ -193,6 +216,10 @@ export default function App() {
       </div>
     </div>
   )
+}
+
+function LockedCycle({ title, copy }: { title: string; copy: string }) {
+  return <div className="nav-locked-cycle"><span>À venir</span><strong>{title}</strong><small>{copy}</small></div>
 }
 
 function ChapterRouter({ progress, update, completeChapter }: { progress: Progress; update: (patch: Partial<Progress>) => void; completeChapter: (chapter: ChapterId) => void }) {
@@ -227,8 +254,8 @@ function Completion({ onReview }: { onReview: () => void }) {
       <h1>Tu as quitté le tutoriel linéaire.</h1>
       <p>Tu peux maintenant construire un modèle, le valider, analyser ses erreurs, l’interroger, l’appliquer à un match complet et utiliser ses sorties pour chercher des questions football intéressantes.</p>
       <div className="completion-grid four-cards">
-        <div><span>01–07</span><strong>Comprendre.</strong><small>Problème, features, modèles, train/test.</small></div>
-        <div><span>08–12</span><strong>Mesurer.</strong><small>Données réelles, erreurs, calibration, validation.</small></div>
+        <div><span>01–06</span><strong>Comprendre.</strong><small>Prédiction, features, test, probabilités et familles de modèles.</small></div>
+        <div><span>07–12</span><strong>Faire confiance.</strong><small>Overfitting, baseline, données, leakage, calibration, validation.</small></div>
         <div><span>13–16</span><strong>Construire.</strong><small>Arbre, tuning, workbench, holdout.</small></div>
         <div><span>17–20</span><strong>Analyser.</strong><small>Erreurs, what-if, match xG, dashboard.</small></div>
       </div>

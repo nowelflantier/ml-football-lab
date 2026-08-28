@@ -2,105 +2,114 @@
 
 ## Status
 
-The learning path now runs through Chapter 20 on branch `codex/cycle-4-analyst-mode`.
+A full pedagogy audit is in progress on branch `refactor/pedagogy-global-pass` after repeated beginner playtests showed that the app was locally interactive but globally introducing technical controls too early.
 
-Main contains Chapters 01–16. This branch adds a less guided Cycle 4 focused on using the model as an analysis instrument rather than learning another isolated ML definition.
+The audit is documented in `docs/pedagogy-audit-2026-08-28.md`.
 
-## Implemented learning staircase
+## Product structure after the audit
 
-### Cycle 1 — 01–07 · Understand
-- prediction and manual rules;
-- first logistic model;
-- features;
-- train/test;
-- probability / xG intuition;
-- overfitting and leakage;
-- first mini-lab comparing logistic and k-NN.
+The app now distinguishes three levels instead of presenting 20 chapters as one mandatory syllabus.
 
-### Cycle 2 — 08–12 · Measure
-- baseline and class imbalance;
-- real StatsBomb raw data and preprocessing;
-- feature engineering;
-- calibration and Brier score;
-- configurable cross-validation.
+### Guided beginner path — Chapters 01–12
 
-### Cycle 3 — 13–16 · Build
-- browser-side decision tree;
-- validation-based hyperparameter tuning;
+#### 01–06 · Understand a prediction
+- 01: observations, manual predictions and a distance rule;
+- 02: examples → learned relation → model;
+- 03: missing information → angle → feature;
+- 04: known examples vs unseen test → generalisation;
+- 05: probability and xG;
+- 06: three concrete model mechanisms before technical names:
+  - smooth global trend → logistic regression;
+  - similar past cases → k-NN;
+  - learned if/then rules → decision tree.
+
+#### 07–12 · Trust the experiment
+- 07: overfitting using only the already-understood neighbour method;
+- 08: naive baseline, class imbalance, threshold and plain-language error types;
+- 09: exact StatsBomb raw data → model-ready row and preprocessing;
+- 10: feature experiments shown as counts first, then the data-leakage trap;
+- 11: calibration with one fixed model and a weather-forecast analogy;
+- 12: cross-validation with one fixed model and only fold count manipulable.
+
+### Optional advanced practice — Chapters 13–16
+
+`Model Workshop` is explicitly an advanced lab, not part of the beginner mental-model staircase.
+
+- decision-tree capacity;
+- validation-based tuning;
 - open model workbench;
-- match-level holdout challenge and external StatsBomb xG benchmark.
+- untouched match-level holdout.
 
-### Cycle 4 — 17–20 · Analyse
-- 17: configurable model + threshold, concrete error list, error filters and shot-level inspection;
-- 18: what-if / sensitivity lab comparing logistic, k-NN and tree on editable shot features;
-- 19: choose a real match, train on the other nine, predict every shot, aggregate team xG and compare to goals / StatsBomb xG;
-- 20: open 10-match analyst dashboard with model switching, team-match sorting by overperformance / underperformance / xG disagreement and drill-down to shots.
+### Optional application — Chapters 17–20
 
-## Pedagogical mode
+`Football Analyst Mode` is open practice rather than another tutorial cycle.
 
-Chapters 01–10 remain concept-first.
+- error analysis;
+- what-if / sensitivity analysis;
+- match xG builder;
+- analyst dashboard.
 
-Chapters 11–16 use the experiment loop:
+## Pedagogical contract
 
-**question → configure → run → inspect → change one thing → rerun → compare history → keep/reject**
+Every new beginner concept should follow:
 
-Cycle 4 deliberately weakens the tutor framing again:
+**concrete situation → learner prediction → manipulate one thing → visible consequence → second attempt → explanation → technical name → optional depth**
 
-**build an instrument → ask a football question → surface interesting rows → inspect the underlying shots → form a new hypothesis**
+Hard invariants:
+- no model-family name before its mechanism is shown;
+- no metric without a plain-language interpretation or numerator / denominator;
+- every percentage must say what population it describes;
+- one conceptual variable per teaching experiment;
+- no tuning control before its effect has been taught;
+- QCM can force a prediction, but cannot be the primary learning mechanism;
+- model probabilities are always framed as estimates produced by a model, never as physical truth.
 
-There should be no hidden correct answer in Cycles 3–4.
+## Navigation / UX
+
+Desktop remains a fixed-height app with independent sidebar / visual / lesson scrolling.
+
+The navigation now:
+- shows progress against the 12-chapter guided path until Chapter 12 is complete;
+- hides individual advanced chapters until their section is unlocked;
+- presents Model Workshop and Football Analyst as optional post-guided sections.
 
 ## Runtime ML
 
-Everything currently executes in the browser on 297 sourced StatsBomb shots across 10 matches:
+All experiments still execute client-side on 297 StatsBomb Open Data shots from 10 Bundesliga 2023/24 matches:
 - logistic regression;
 - k-nearest-neighbours;
 - decision tree;
 - threshold metrics / confusion matrix;
-- Brier score and calibration buckets;
+- Brier / calibration buckets;
 - stratified cross-validation;
-- train / validation / test split;
-- match-level holdout;
-- leave-one-match-out xG generation for the analyst dashboard.
+- train / validation / test;
+- match holdout;
+- leave-one-match-out match xG.
 
 Python remains offline data preparation only.
 
-## Data
+## Data safety
 
-Source:
-- StatsBomb Open Data;
-- 1. Bundesliga 2023/24;
-- competition 9 / season 281;
-- 297 shots from 10 matches.
-
-`statsbomb_xg_reference` is benchmark-only and never an input feature for our model.
+`statsbomb_xg_reference` remains benchmark-only and must never be used as an input feature for our own model.
 
 ## Build / CI
 
-Permanent CI on `main` runs real dependency installation, `npm run build` and Python syntax checks.
+Permanent CI on `main` runs:
+- real dependency installation;
+- `npm run build` (`tsc -b && vite build`);
+- Python syntax checks.
 
-Next gate: CI + Vercel preview for Chapters 17–20 before merge.
+The current branch must pass CI and Vercel preview before merge.
 
-## Next pedagogical gate
+## Next gate
 
-The user should first playtest Chapters 11–20 rather than replay earlier material.
+Do not extend the chapter count.
 
-Key questions:
-- Does the open Model Workshop finally feel like genuine experimentation?
-- Can the learner articulate why one candidate is preferable without a hidden answer?
-- Does error analysis naturally produce new hypotheses?
-- Does the what-if lab make model behaviour tangible without implying causality?
-- Does match-level xG feel like a real analytical output rather than another lesson artifact?
-- Does the dashboard create curiosity about football questions?
+First validate the audited path as a learning tool, especially Chapters 06–12:
+- can the learner explain the three model mechanisms without relying on names?
+- does overfitting become obvious after the k=1 self-neighbour example?
+- are Chapter 10 percentages now unambiguous as whole-model test performance?
+- does calibration make `0–20%` immediately readable?
+- does Chapter 12 teach cross-validation without becoming a tuning workbench?
 
-## After Chapter 20
-
-Do not automatically extend chapter count again.
-
-Future work should be driven by concrete questions and may include:
-- more matches / seasons;
-- ensembles and gradient boosting;
-- interpretation / feature effects;
-- player and team profiles;
-- clustering / similarity;
-- tracking / 360 data.
+Only after those answers are positive should work continue on new ML topics.
