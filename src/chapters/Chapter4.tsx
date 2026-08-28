@@ -12,14 +12,39 @@ type Props = {
   onComplete: () => void
 }
 
+type ExperimentRun = {
+  seed: number
+  testRatio: number
+  trainScore: number
+  testScore: number
+  trainCount: number
+  testCount: number
+}
+
 export function Chapter4({ step, setStep, onComplete }: Props) {
   const [trustAnswer, setTrustAnswer] = useState<'yes' | 'doubt' | null>(null)
+  const [testRatio, setTestRatio] = useState(0.3)
   const [seed, setSeed] = useState(3)
+  const [runs, setRuns] = useState<ExperimentRun[]>([])
   const fixedEvaluation = useMemo(() => evaluateLogistic(learningShots, challengeShots), [])
-  const resplit = useMemo(() => {
-    const split = stratifiedSplit(allShots, seed)
-    return { split, evaluation: evaluateLogistic(split.train, split.test) }
-  }, [seed])
+  const previewSplit = useMemo(() => stratifiedSplit(allShots, seed, testRatio), [seed, testRatio])
+
+  const runExperiment = () => {
+    const split = stratifiedSplit(allShots, seed, testRatio)
+    const evaluation = evaluateLogistic(split.train, split.test)
+    setRuns((current) => [
+      ...current,
+      {
+        seed,
+        testRatio,
+        trainScore: evaluation.trainAccuracy,
+        testScore: evaluation.testAccuracy,
+        trainCount: split.train.length,
+        testCount: split.test.length,
+      },
+    ])
+    setSeed((current) => current + 1)
+  }
 
   if (step === 0) {
     return (
@@ -45,7 +70,7 @@ export function Chapter4({ step, setStep, onComplete }: Props) {
               <strong>Le piège est dans la question.</strong>
               <span>On est en train de noter le modèle sur des exemples qu’il connaît déjà. C’est comme réviser avec le corrigé puis repasser exactement la même feuille.</span>
             </div>
-            <ContinueButton onClick={() => setStep(1)}>Faisons-lui passer un vrai contrôle</ContinueButton>
+            <ContinueButton onClick={() => setStep(1)}>Construire un vrai contrôle</ContinueButton>
           </>
         )}
       </LabShell>
@@ -57,47 +82,80 @@ export function Chapter4({ step, setStep, onComplete }: Props) {
       <LabShell
         visual={
           <div className="split-stage">
-            <div className="split-card train"><span>APPRENTISSAGE</span><strong>{learningShots.length} tirs</strong><small>le modèle peut les utiliser</small></div>
+            <div className="split-card train"><span>APPRENTISSAGE</span><strong>{previewSplit.train.length} tirs</strong><small>le modèle peut les utiliser</small></div>
             <div className="split-arrow">→</div>
-            <div className="split-card test"><span>TEST</span><strong>{challengeShots.length} tirs</strong><small>jamais montrés au modèle</small></div>
+            <div className="split-card test"><span>TEST</span><strong>{previewSplit.test.length} tirs</strong><small>jamais montrés au modèle</small></div>
           </div>
         }
       >
-        <Eyebrow>Chapitre 04 · Cacher une partie des données</Eyebrow>
-        <h1>On garde des tirs de côté.</h1>
-        <p className="lead">Le modèle apprend sur un premier groupe. Ensuite seulement, on mesure ses prédictions sur des tirs qu’il n’a jamais vus.</p>
-        <div className="metric-grid">
-          <div className="metric"><strong>{Math.round(fixedEvaluation.trainAccuracy * 100)}%</strong><span>sur les tirs d’apprentissage</span></div>
-          <div className="metric"><strong>{Math.round(fixedEvaluation.testAccuracy * 100)}%</strong><span>sur les tirs cachés</span></div>
+        <Eyebrow>Chapitre 04 · À toi de découper</Eyebrow>
+        <h1>Quelle part des données veux-tu garder pour le contrôle&nbsp;?</h1>
+        <p className="lead">Plus tu gardes de tirs pour le test, plus le contrôle est fourni. Mais il reste moins d’exemples au modèle pour apprendre.</p>
+        <div className="ratio-picker" role="group" aria-label="Part réservée au test">
+          {[0.1, 0.3, 0.5].map((ratio) => (
+            <button key={ratio} className={testRatio === ratio ? 'selected' : ''} onClick={() => { setTestRatio(ratio); setRuns([]) }}>
+              <strong>{Math.round(ratio * 100)}%</strong>
+              <span>pour le test</span>
+            </button>
+          ))}
         </div>
-        <p>Le second score nous intéresse davantage : il commence à répondre à la question <strong>« est-ce que ce que le modèle a appris fonctionne aussi ailleurs ? »</strong></p>
-        <div className="definition-inline"><span>Nouveaux mots</span><strong>TRAIN / TEST</strong><p>Train = exemples utilisés pour apprendre. Test = exemples gardés hors de l’apprentissage pour évaluer ensuite.</p></div>
-        <ContinueButton onClick={() => setStep(2)}>Et si le découpage change&nbsp;?</ContinueButton>
+        <div className="thought-prompt"><strong>Pas de valeur magique</strong><span>Le choix dépend de la quantité de données disponible et de ce qu’on veut mesurer. Pour l’instant, observe surtout le compromis.</span></div>
+        <ContinueButton onClick={() => setStep(2)}>Lancer plusieurs expériences</ContinueButton>
       </LabShell>
     )
   }
 
   if (step === 2) {
-    const trainScore = Math.round(resplit.evaluation.trainAccuracy * 100)
-    const testScore = Math.round(resplit.evaluation.testAccuracy * 100)
+    const latest = runs.at(-1)
+    const testScores = runs.map((run) => run.testScore)
+    const minScore = testScores.length ? Math.min(...testScores) : 0
+    const maxScore = testScores.length ? Math.max(...testScores) : 0
+
     return (
       <LabShell
         visual={
-          <div className="experiment-board">
-            <div><span>Train</span><strong>{trainScore}%</strong><small>{resplit.split.train.length} tirs</small></div>
-            <div><span>Test</span><strong>{testScore}%</strong><small>{resplit.split.test.length} tirs</small></div>
-            <button className="secondary-button inline-button" onClick={() => setSeed((current) => current + 1)}>↻ Nouveau découpage</button>
+          <div className="experiment-lab">
+            <div className="experiment-headline">
+              <span>Test réservé</span>
+              <strong>{Math.round(testRatio * 100)}%</strong>
+              <small>{runs.length} expérience{runs.length > 1 ? 's' : ''} lancée{runs.length > 1 ? 's' : ''}</small>
+            </div>
+            {runs.length === 0 ? (
+              <div className="empty-experiment">Lance une expérience pour entraîner puis tester un modèle.</div>
+            ) : (
+              <div className="run-history">
+                {runs.map((run, index) => (
+                  <div key={`${run.seed}-${index}`}>
+                    <span>#{index + 1}</span>
+                    <i style={{ width: `${run.testScore * 100}%` }} />
+                    <strong>{Math.round(run.testScore * 100)}%</strong>
+                  </div>
+                ))}
+              </div>
+            )}
+            <button className="secondary-button inline-button" onClick={runExperiment}>▶ Entraîner + tester</button>
           </div>
         }
       >
-        <Eyebrow>Chapitre 04 · Une vraie expérience</Eyebrow>
-        <h1>Le score bouge quand les tirs cachés changent.</h1>
-        <p className="lead">Clique plusieurs fois sur « Nouveau découpage ». À chaque fois, l’app mélange réellement les tirs, entraîne un nouveau modèle et le teste sur un autre groupe.</p>
-        <div className="thought-prompt"><strong>À observer</strong><span>Avec peu de données, quelques tirs difficiles peuvent faire beaucoup bouger le score. Un chiffre isolé n’est pas une vérité absolue.</span></div>
+        <Eyebrow>Chapitre 04 · Expérimente</Eyebrow>
+        <h1>Un score unique peut être trompeur. Fais-le bouger toi-même.</h1>
+        <p className="lead">À chaque clic, un autre groupe de tirs est caché, un nouveau modèle est entraîné sur le reste, puis évalué sur ces tirs inconnus.</p>
+        {latest && (
+          <div className="metric-grid">
+            <div className="metric"><strong>{Math.round(latest.trainScore * 100)}%</strong><span>train · {latest.trainCount} tirs</span></div>
+            <div className="metric"><strong>{Math.round(latest.testScore * 100)}%</strong><span>test · {latest.testCount} tirs</span></div>
+          </div>
+        )}
+        {runs.length >= 3 && (
+          <div className="feedback good">
+            <strong>Tu as maintenant plusieurs mesures.</strong>
+            <span>Sur tes essais, le test varie de {Math.round(minScore * 100)}% à {Math.round(maxScore * 100)}%. Avec aussi peu de tirs, le groupe caché change beaucoup le résultat.</span>
+          </div>
+        )}
         <UnderTheHood>
-          <p>Le navigateur sépare ici les buts et les tirs ratés, mélange chaque groupe avec une graine déterministe, réserve environ 30% des tirs pour le test, puis réentraîne la régression logistique uniquement sur le reste.</p>
+          <p>Le navigateur sépare les buts et les tirs ratés, mélange chaque groupe, réserve la proportion que tu as choisie pour le test, puis réentraîne la régression logistique uniquement sur le reste.</p>
         </UnderTheHood>
-        <ContinueButton onClick={() => setStep(3)}>Mettre un nom sur ce qu’on cherche</ContinueButton>
+        {runs.length >= 3 ? <ContinueButton onClick={() => setStep(3)}>Mettre un nom sur ce qu’on cherche</ContinueButton> : <p className="practice-gate">Lance au moins 3 expériences avant de continuer.</p>}
       </LabShell>
     )
   }
@@ -112,9 +170,9 @@ export function Chapter4({ step, setStep, onComplete }: Props) {
     >
       <Eyebrow>Chapitre 04 · Généraliser</Eyebrow>
       <h1>Le but n’est pas de mémoriser. C’est de généraliser.</h1>
-      <p className="lead">Un modèle utile apprend une relation sur des exemples passés et reste pertinent sur de nouveaux exemples.</p>
+      <p className="lead">Tu viens de le mesurer toi-même : la vraie question n’est pas « quel score sur les exemples appris ? », mais « est-ce que ce que le modèle a appris tient sur des exemples qu’il n’a jamais vus ? »</p>
       <div className="reveal-card"><span>Concept débloqué</span><strong>Généralisation : capacité du modèle à rester utile sur des données qu’il n’a pas utilisées pour apprendre.</strong></div>
-      <p>On vient aussi de poser une règle essentielle pour tout ce qui suit : <strong>on ne compare plus sérieusement des modèles sur leur score d’entraînement.</strong></p>
+      <p>Et tu as déjà rencontré un deuxième problème : <strong>une évaluation dépend elle-même des données choisies pour le test.</strong> On reviendra dessus plus tard.</p>
       <ContinueButton onClick={onComplete}>Passer au chapitre 05</ContinueButton>
     </LabShell>
   )
