@@ -58,6 +58,14 @@ Chapters 01–12 form the beginner curriculum. Chapters 13–16 are `Model Works
 
 The navigation and progress UI should reflect that distinction instead of presenting twenty chapters as one mandatory syllabus.
 
+## 2026-08-28 — Advanced practice does not use arbitrary hard gates
+
+Post-guided chapters may suggest repeated experiments, alternate models, or multiple inspections, but those are optional challenges.
+
+A learner should be able to continue after completing the chapter's core action once. Do not require quotas such as “run four models”, “inspect three errors”, “change six values”, or “test two matches” merely to unlock the next screen.
+
+When a chapter's learning objective is not model tuning, advanced model controls should be collapsed or secondary by default. In particular, match-level and analyst chapters should work immediately with a sensible default model.
+
 ## 2026-08-28 — No new numbered cycle until the audited path is validated
 
-Do not extend the chapter count beyond 20 until the revised Chapters 06–12 are playtested as a coherent sequence. New ML techniques should later be introduced because a football question needs them, not because the curriculum has room for another topic.
+Do not extend the chapter count beyond 20 until the revised guided path and advanced-flow friction pass are stable. New ML techniques should later be introduced because a football question needs them, not because the curriculum has room for another topic.
