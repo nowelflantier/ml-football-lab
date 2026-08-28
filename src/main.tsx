@@ -7,6 +7,7 @@ import './practice.css'
 import './cycle2.css'
 import './workshop.css'
 import './analyst.css'
+import './bridge.css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

@@ -72,7 +72,7 @@ const chapterMeta = [
   { id: 8, short: '08', title: 'Mesurer', subtitle: 'Baseline & erreurs' },
   { id: 9, short: '09', title: 'Préparer', subtitle: 'Vraies données source' },
   { id: 10, short: '10', title: 'Enrichir', subtitle: 'Feature engineering' },
-  { id: 11, short: '11', title: 'Calibrer', subtitle: 'Probabilités crédibles' },
+  { id: 11, short: '11', title: 'Comprendre', subtitle: 'Modèles & mesures' },
   { id: 12, short: '12', title: 'Valider', subtitle: 'Cross-validation' },
   { id: 13, short: '13', title: 'Arborer', subtitle: 'Decision tree' },
   { id: 14, short: '14', title: 'Régler', subtitle: 'Validation & tuning' },
