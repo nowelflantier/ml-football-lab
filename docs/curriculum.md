@@ -1,9 +1,8 @@
 # Curriculum
 
-## V0 — Foundations
+## Cycle 1 — From intuition to evaluation
 
 ### 01 — Predict
-
 Experience:
 - inspect a small set of shots;
 - predict unseen outcomes;
@@ -18,10 +17,9 @@ Concepts unlocked:
 - error.
 
 ### 02 — Learn
-
 Experience:
 - reuse the same distance problem;
-- train a tiny logistic model;
+- train a tiny logistic model in the browser;
 - see a probability curve;
 - compare the manual rule with the learned relation.
 
@@ -30,7 +28,6 @@ Concept unlocked:
 - minimal intuition for machine learning.
 
 ### 03 — Describe
-
 Experience:
 - compare two shots at the same distance but different angles;
 - add angle;
@@ -39,18 +36,62 @@ Experience:
 Concept unlocked:
 - feature.
 
-## Planned next staircase
+### 04 — Test
+Experience:
+- first see an attractive score on familiar examples;
+- reserve unseen shots;
+- compare train and test scores;
+- repeatedly reshuffle a deterministic stratified split and retrain in-browser.
 
-### 04 — Can we trust the score?
-Reveal that evaluating on familiar examples is misleading. Introduce train/test split and generalisation.
+Concepts unlocked:
+- train/test split;
+- generalisation;
+- evaluation variance on a small dataset.
 
-### 05 — From yes/no to probability
-Calibrate the intuition behind goal probability and connect it carefully to xG.
+### 05 — Probabilise
+Experience:
+- see a low-probability shot become a goal;
+- reason about probabilities as frequencies rather than promises;
+- sum shot probabilities;
+- connect the same mechanism to expected goals.
 
-### 06 — Too good to be true
-Overfitting, leakage, and accidental shortcuts through a deliberately deceptive example.
+Concepts unlocked:
+- probabilistic prediction;
+- calibration intuition (without claiming the seed model is calibrated);
+- xG as per-shot goal probability and sum of shot probabilities.
 
-### 07 — Two ways to learn
-Compare two simple model families on the same task only after evaluation is understood.
+### 06 — Distrust perfect scores
+Experience:
+- compare a smooth logistic model with 1-nearest-neighbour;
+- see 100% train accuracy fail to dominate on test;
+- inspect an intentionally leaked post-shot feature.
 
-Later topics may include clustering, player similarity, dimensionality, richer event data, and model interpretation. They are deliberately not scoped yet.
+Concepts unlocked:
+- overfitting;
+- data leakage;
+- prediction-time feature availability.
+
+### 07 — Compare
+Experience:
+- compare logistic regression and k-nearest-neighbours on the same train/test problem;
+- inspect per-shot probability differences;
+- change k live and immediately reevaluate on the test set.
+
+Concepts unlocked:
+- model family;
+- hyperparameter;
+- model comparison as behaviour + unseen-data evaluation, not train score.
+
+## Next staircase
+
+The next cycle should move from the pedagogical seed to sourced football data without abandoning the learning sequence.
+
+Candidate topics:
+- inspect a real StatsBomb shot distribution;
+- data cleaning and missing values;
+- feature engineering from event data;
+- calibration plots and Brier/log loss after probability intuition is secure;
+- richer xG baseline;
+- cross-validation once the learner has felt split variance;
+- model interpretation and error slices;
+- only later: clustering, player similarity, dimensionality, trees/boosting, richer event sequences.

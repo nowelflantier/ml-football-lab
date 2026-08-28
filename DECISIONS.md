@@ -1,25 +1,25 @@
 # DECISIONS
 
-## D-001 — Football is the course world
+## 2026-08-28 — Vite + React + TypeScript
 
-Use one broad football theme across the early curriculum rather than unrelated toy datasets. It reduces context switching while allowing varied ML concepts later.
+Keep the lab as a client-side Vite/React application. The educational models are small enough to train and evaluate in-browser, which makes the causal link between a learner interaction and a model result immediate.
 
-## D-002 — Dedicated interactive lab
+## 2026-08-28 — Question before vocabulary
 
-The app is the primary learning surface. Chat is for design, questions, and debriefs; lesson answers should not be spoiled in chat before the learner experiences them.
+A concept is introduced only after the learner has experienced the problem it solves. The intended sequence is question → manipulation → consequence → explanation → vocabulary.
 
-## D-003 — Vite + React + TypeScript
+## 2026-08-28 — Technical depth ramps after foundations
 
-Static-first. No backend, database, auth, or production Python runtime in V0. Progress uses `localStorage`.
+Chapters 01–03 stay intentionally intuitive. Starting with Chapter 04, displayed experimental results are computed live and an optional `Sous le capot` layer starts exposing implementation/math details. This avoids both lecture-first teaching and a later cliff from abstraction to code.
 
-## D-004 — Three micro-chapters before train/test
+## 2026-08-28 — Evaluation before model zoo
 
-V0 teaches data/prediction, manual rule vs learned model, and features. Formal train/test evaluation is deliberately postponed to Chapter 04.
+Train/test and generalisation come before comparing model families. Overfitting/leakage come before hyperparameter tuning. The learner should know what a fair comparison means before being offered several algorithms.
 
-## D-005 — Seed fixtures are temporary and explicit
+## 2026-08-28 — In-browser ML first
 
-Use a tiny pedagogical seed to validate the experience quickly. Never misrepresent it as sourced match data. Keep an offline StatsBomb converter so real open-data observations can replace it later.
+Use small deterministic TypeScript implementations for the first learning cycle: logistic regression, splitting, k-NN, and metrics. Do not add TensorFlow, Python, notebooks, or a backend until the curriculum needs capabilities that justify the extra machinery.
 
-## D-006 — No premature generic course engine
+## 2026-08-28 — Pedagogical seed remains explicit
 
-Keep chapter components explicit for V0. Extract a generic schema only after later chapters demonstrate stable repeated patterns.
+The current shot fixtures are designed for conceptual readability and must remain labelled as `pedagogical-seed`. The StatsBomb converter exists to enable a later real-data cycle, but provenance must not be blurred.

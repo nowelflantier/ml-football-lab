@@ -2,39 +2,62 @@
 
 ## Status
 
-V0 vertical slice implemented locally with Vite + React + TypeScript.
+Cycle 1 is implemented locally with Vite + React + TypeScript.
 
 ### Implemented
 
-- Chapter 01: observe shots, predict four outcomes, build a manual distance threshold, see errors.
-- Chapter 02: browser-side logistic model using distance, probability curve, human/model comparison, first definition of "model".
-- Chapter 03: same-distance/different-angle reveal, distance vs distance+angle, feature-selection exercise, end-of-V0 mental model.
-- Chapter navigation and locking.
-- Progress and manual threshold persisted in `localStorage`.
+- Chapter 01: observe shots, predict outcomes, build a manual distance threshold, see errors.
+- Chapter 02: browser-side logistic model using distance, probability curve, human/model comparison.
+- Chapter 03: same-distance/different-angle reveal, distance vs distance+angle, feature-selection exercise.
+- Chapter 04: true train/test evaluation, deterministic stratified reshuffles, in-browser retraining, generalisation.
+- Chapter 05: probability-as-frequency intuition, xG connection, probability summation exercise.
+- Chapter 06: 1-NN overfitting demonstration plus post-shot leakage trap.
+- Chapter 07: logistic vs k-NN comparison, per-shot predictions, live k hyperparameter experiment.
+- Progressive `Sous le capot` technical disclosures from Chapter 04 onward.
+- Chapter navigation and locking through 7 chapters.
+- V0 progress migration preserved from `ml-football-lab-progress-v0` to V1 storage.
 - Responsive layout.
 - Offline StatsBomb event converter.
 
-### Data
+## Runtime ML boundary
 
-V0 currently uses pedagogical seed fixtures in `src/data/shots.ts`.
+The current educational experiments intentionally run directly in the browser:
 
-Next data task: select a stable open StatsBomb competition/match sample, run `scripts/prepare-shots.py`, review the derived shot distribution, and curate a learner-safe slice without changing the conceptual sequence.
+- logistic regression implemented in TypeScript;
+- deterministic train/test splitting;
+- k-nearest-neighbours implemented in TypeScript;
+- evaluation recalculated on interaction.
+
+This is sufficient for educational datasets in the hundreds or low thousands of observations. A Python/backend path should only be introduced when data volume, model complexity, or reproducibility requirements justify it.
+
+## Data
+
+The current app still uses pedagogical seed fixtures in `src/data/shots.ts`.
+
+Next data gate:
+1. select a stable open StatsBomb competition/match sample;
+2. run `scripts/prepare-shots.py`;
+3. inspect class balance and shot geometry distributions;
+4. curate a learner-safe real-data slice;
+5. verify that the conceptual reveals still work before replacing the seed.
+
+Do not silently present the current seed as real StatsBomb observations.
 
 ## Next product gate
 
-Have a true zero-ML learner play V0 without prior explanation. Evaluate:
+Play through Chapters 04–07 as a zero-ML learner and capture where technical detail feels either too early or too magical.
 
-- Were any steps confusing before the term was introduced?
-- Did the learner understand prediction vs certainty?
-- Did the learner understand human-authored rule vs learned model?
-- Did "feature" make sense after the angle interaction?
-- Could the learner restate the final loop in their own words?
+Key questions:
+- Does the train/test trap land before the vocabulary is revealed?
+- Does repeated reshuffling make evaluation variance intuitive?
+- Does the xG chapter distinguish probability from deterministic outcome?
+- Are overfitting and leakage clearly different failure modes?
+- Does changing k feel like a meaningful first hyperparameter rather than a random slider?
+- Are `Sous le capot` sections enough technical depth without breaking the main flow?
 
-Only then shape Chapter 04 (train/test).
+## Validation status
 
-## Validation note — current execution environment
-
-- `git diff --check`: passed.
-- App TypeScript was semantically checked with temporary React type stubs because package installation is unavailable in the current execution environment: passed.
-- `scripts/prepare-shots.py` was smoke-tested against a minimal StatsBomb-shaped event file: passed.
-- `npm install` timed out because the runtime could not reach the npm registry, so `npm run typecheck` and `npm run build` with the real React/Vite packages remain to be run in a networked environment before calling V0 build-validated.
+Pending fresh validation after Chapters 04–07:
+- real React/Vite `npm run typecheck`;
+- real React/Vite `npm run build`;
+- browser playthrough of all seven chapters.
