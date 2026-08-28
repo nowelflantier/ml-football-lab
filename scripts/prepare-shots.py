@@ -47,28 +47,64 @@ def geometry(location: list[float]) -> tuple[float, float]:
     return round(distance, 2), round(angle, 2)
 
 
+def nested_name(payload: dict[str, Any], *keys: str) -> str | None:
+    current: Any = payload
+    for key in keys:
+        if not isinstance(current, dict):
+            return None
+        current = current.get(key)
+    if isinstance(current, dict):
+        value = current.get("name")
+        return value if isinstance(value, str) else None
+    return current if isinstance(current, str) else None
+
+
+def parse_match_id(source_file: Path) -> int | None:
+    try:
+        return int(source_file.stem)
+    except ValueError:
+        return None
+
+
 def event_to_shot(event: dict[str, Any], source_file: Path) -> dict[str, Any] | None:
     if event.get("type", {}).get("name") != "Shot":
         return None
+
     location = event.get("location")
     if not isinstance(location, list) or len(location) < 2:
         return None
 
+    shot = event.get("shot", {})
+    if not isinstance(shot, dict):
+        shot = {}
+
     distance, angle = geometry(location)
-    outcome = event.get("shot", {}).get("outcome", {}).get("name")
+    outcome = nested_name(shot, "outcome")
+    statsbomb_xg = shot.get("statsbomb_xg")
+
     return {
         "id": str(event.get("id", "")),
+        "match_id": parse_match_id(source_file),
         "x": round(float(location[0]), 2),
         "y": round(float(location[1]), 2),
         "distance": distance,
         "angle": angle,
         "goal": outcome == "Goal",
+        "body_part": nested_name(shot, "body_part"),
+        "shot_type": nested_name(shot, "type"),
+        "technique": nested_name(shot, "technique"),
+        "first_time": bool(shot.get("first_time", False)),
+        "under_pressure": bool(event.get("under_pressure", False)),
+        "play_pattern": nested_name(event, "play_pattern"),
+        "statsbomb_xg_reference": float(statsbomb_xg) if isinstance(statsbomb_xg, (int, float)) else None,
         "source": "statsbomb-open-data",
         "provenance": {
             "event_file": source_file.name,
             "minute": event.get("minute"),
-            "team": event.get("team", {}).get("name"),
-            "player": event.get("player", {}).get("name"),
+            "second": event.get("second"),
+            "period": event.get("period"),
+            "team": nested_name(event, "team"),
+            "player": nested_name(event, "player"),
             "outcome": outcome,
         },
     }
@@ -100,12 +136,17 @@ def main() -> None:
             "source": "StatsBomb Open Data",
             "source_repo": "https://github.com/hudl/open-data",
             "shot_count": len(shots),
-            "notes": "Derived distance/angle are approximate metric geometry for teaching use.",
+            "notes": [
+                "Derived distance/angle use approximate metric geometry for teaching use.",
+                "statsbomb_xg_reference is preserved only for later comparison and must never be used as a training feature.",
+            ],
         },
         "shots": shots,
     }
+
     rendered = json.dumps(payload, ensure_ascii=False, indent=2)
     if args.output:
+        args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(rendered + "\n", encoding="utf-8")
     else:
         print(rendered)
