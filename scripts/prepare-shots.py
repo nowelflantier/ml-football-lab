@@ -66,6 +66,24 @@ def parse_match_id(source_file: Path) -> int | None:
         return None
 
 
+def compact_raw_excerpt(event: dict[str, Any], shot: dict[str, Any]) -> dict[str, Any]:
+    """Keep the exact source fields needed for the raw→clean teaching reveal."""
+    return {
+        "location": event.get("location"),
+        "under_pressure": event.get("under_pressure"),
+        "play_pattern": event.get("play_pattern"),
+        "team": event.get("team"),
+        "player": event.get("player"),
+        "shot": {
+            "outcome": shot.get("outcome"),
+            "body_part": shot.get("body_part"),
+            "type": shot.get("type"),
+            "technique": shot.get("technique"),
+            "first_time": shot.get("first_time"),
+        },
+    }
+
+
 def event_to_shot(event: dict[str, Any], source_file: Path) -> dict[str, Any] | None:
     if event.get("type", {}).get("name") != "Shot":
         return None
@@ -98,6 +116,7 @@ def event_to_shot(event: dict[str, Any], source_file: Path) -> dict[str, Any] | 
         "play_pattern": nested_name(event, "play_pattern"),
         "statsbomb_xg_reference": float(statsbomb_xg) if isinstance(statsbomb_xg, (int, float)) else None,
         "source": "statsbomb-open-data",
+        "raw_excerpt": compact_raw_excerpt(event, shot),
         "provenance": {
             "event_file": source_file.name,
             "minute": event.get("minute"),
@@ -139,6 +158,7 @@ def main() -> None:
             "notes": [
                 "Derived distance/angle use approximate metric geometry for teaching use.",
                 "statsbomb_xg_reference is preserved only for later comparison and must never be used as a training feature.",
+                "raw_excerpt preserves exact selected upstream fields for the Chapter 09 raw-to-clean teaching reveal.",
             ],
         },
         "shots": shots,
