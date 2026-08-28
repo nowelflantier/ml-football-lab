@@ -37,8 +37,9 @@ export function Chapter15({ step, setStep, onComplete }: Props) {
   const execute = () => {
     const result = crossValidate(realShots, config, folds, threshold, 211)
     const run = { config: { ...config, features: [...config.features] }, threshold, folds, result, direction: directionFor(result) }
-    setCandidate(runs.length)
-    setRuns((current) => [...current.slice(-8), run])
+    const nextRuns = [...runs.slice(-8), run]
+    setRuns(nextRuns)
+    setCandidate(nextRuns.length - 1)
   }
 
   if (step === 0) return (
