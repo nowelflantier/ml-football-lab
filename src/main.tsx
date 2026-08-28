@@ -4,6 +4,7 @@ import App from './App'
 import './styles.css'
 import './cycle1.css'
 import './practice.css'
+import './cycle2.css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
