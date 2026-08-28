@@ -50,6 +50,21 @@ export function evaluateLogistic(train: Shot[], test: Shot[], features: ShotFeat
   }
 }
 
+export function confusionMatrix(probabilities: number[], labels: number[], threshold = 0.5) {
+  return probabilities.reduce(
+    (matrix, probability, index) => {
+      const predicted = probability >= threshold ? 1 : 0
+      const actual = labels[index]
+      if (predicted === 1 && actual === 1) matrix.truePositive += 1
+      if (predicted === 0 && actual === 0) matrix.trueNegative += 1
+      if (predicted === 1 && actual === 0) matrix.falsePositive += 1
+      if (predicted === 0 && actual === 1) matrix.falseNegative += 1
+      return matrix
+    },
+    { truePositive: 0, trueNegative: 0, falsePositive: 0, falseNegative: 0 },
+  )
+}
+
 export function brierScore(probabilities: number[], labels: number[]) {
   return probabilities.reduce((sum, probability, index) => sum + (probability - labels[index]) ** 2, 0) / probabilities.length
 }
