@@ -21,8 +21,9 @@ export function Chapter16({ step, setStep, onComplete }: Props) {
   const execute = () => {
     const result = crossValidate(split.develop, config, folds, 0.25, 251)
     const run = { config: { ...config, features: [...config.features] }, folds, result }
-    setCandidate(runs.length)
-    setRuns((current) => [...current.slice(-8), run])
+    const nextRuns = [...runs.slice(-8), run]
+    setRuns(nextRuns)
+    setCandidate(nextRuns.length - 1)
   }
 
   const lockAndReveal = () => {
