@@ -7,14 +7,14 @@ import { crossValidate } from '../ml/validation'
 type Props = { step: number; setStep: (step: number) => void; onComplete: () => void }
 type Run = { foldCount: number; result: ReturnType<typeof crossValidate> }
 
-const fixedConfig = { family: 'logistic' as const, features: ['distance', 'angle'] as const }
+const fixedConfig = { family: 'logistic' as const, features: ['distance', 'angle'] as Array<'distance' | 'angle'> }
 
 export function Chapter12({ step, setStep, onComplete }: Props) {
   const [foldCount, setFoldCount] = useState(5)
   const [runs, setRuns] = useState<Run[]>([])
 
   const execute = () => {
-    const result = crossValidate(realShots, { family: 'logistic', features: ['distance', 'angle'] }, foldCount, 0.25, 97)
+    const result = crossValidate(realShots, fixedConfig, foldCount, 0.25, 97)
     setRuns((current) => [...current.slice(-5), { foldCount, result }])
   }
 
