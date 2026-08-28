@@ -15,11 +15,15 @@ import { Chapter13 } from './chapters/Chapter13'
 import { Chapter14 } from './chapters/Chapter14'
 import { Chapter15 } from './chapters/Chapter15'
 import { Chapter16 } from './chapters/Chapter16'
+import { Chapter17 } from './chapters/Chapter17'
+import { Chapter18 } from './chapters/Chapter18'
+import { Chapter19 } from './chapters/Chapter19'
+import { Chapter20 } from './chapters/Chapter20'
 import type { ChapterId, Progress } from './types'
 
 const STORAGE_KEY = 'ml-football-lab-progress-v1'
 const LEGACY_STORAGE_KEY = 'ml-football-lab-progress-v0'
-const CHAPTER_COUNT = 16
+const CHAPTER_COUNT = 20
 
 const defaultProgress: Progress = {
   chapter: 1,
@@ -39,6 +43,10 @@ const defaultProgress: Progress = {
   chapter14Step: 0,
   chapter15Step: 0,
   chapter16Step: 0,
+  chapter17Step: 0,
+  chapter18Step: 0,
+  chapter19Step: 0,
+  chapter20Step: 0,
   manualThreshold: 11,
   completed: [],
 }
@@ -70,6 +78,10 @@ const chapterMeta = [
   { id: 14, short: '14', title: 'Régler', subtitle: 'Validation & tuning' },
   { id: 15, short: '15', title: 'Construire', subtitle: 'Model Workshop' },
   { id: 16, short: '16', title: 'Éprouver', subtitle: 'Holdout final' },
+  { id: 17, short: '17', title: 'Diagnostiquer', subtitle: 'Error analysis' },
+  { id: 18, short: '18', title: 'Interroger', subtitle: 'What-if lab' },
+  { id: 19, short: '19', title: 'Agréger', subtitle: 'xG de match' },
+  { id: 20, short: '20', title: 'Analyser', subtitle: 'Dashboard football' },
 ] as const
 
 export default function App() {
@@ -105,6 +117,10 @@ export default function App() {
       case 14: return { chapter14Step: 0 }
       case 15: return { chapter15Step: 0 }
       case 16: return { chapter16Step: 0 }
+      case 17: return { chapter17Step: 0 }
+      case 18: return { chapter18Step: 0 }
+      case 19: return { chapter19Step: 0 }
+      case 20: return { chapter20Step: 0 }
     }
   }
 
@@ -162,15 +178,17 @@ export default function App() {
           <div className="nav-heading cycle-two-heading">Cycle 2 · Rendre l’expérience crédible</div>
           {chapterMeta.slice(7, 12).map(renderChapterLink)}
           <div className="nav-heading cycle-two-heading">Cycle 3 · Model Workshop</div>
-          {chapterMeta.slice(12).map(renderChapterLink)}
+          {chapterMeta.slice(12, 16).map(renderChapterLink)}
+          <div className="nav-heading cycle-two-heading">Cycle 4 · Football Analyst Mode</div>
+          {chapterMeta.slice(16).map(renderChapterLink)}
           <div className="nav-footer">
             <span className="status-dot" />
-            <span>Modèles exécutés dans le navigateur<br />StatsBomb réel · 297 tirs</span>
+            <span>Modèles exécutés dans le navigateur<br />StatsBomb réel · 297 tirs · 10 matchs</span>
           </div>
         </aside>
 
         <main className="main-stage">
-          {finished ? <Completion onReview={() => openChapter(16)} /> : <ChapterRouter progress={progress} update={update} completeChapter={completeChapter} />}
+          {finished ? <Completion onReview={() => openChapter(20)} /> : <ChapterRouter progress={progress} update={update} completeChapter={completeChapter} />}
         </main>
       </div>
     </div>
@@ -195,23 +213,27 @@ function ChapterRouter({ progress, update, completeChapter }: { progress: Progre
     case 14: return <Chapter14 step={progress.chapter14Step} setStep={(chapter14Step) => update({ chapter14Step })} onComplete={() => completeChapter(14)} />
     case 15: return <Chapter15 step={progress.chapter15Step} setStep={(chapter15Step) => update({ chapter15Step })} onComplete={() => completeChapter(15)} />
     case 16: return <Chapter16 step={progress.chapter16Step} setStep={(chapter16Step) => update({ chapter16Step })} onComplete={() => completeChapter(16)} />
+    case 17: return <Chapter17 step={progress.chapter17Step} setStep={(chapter17Step) => update({ chapter17Step })} onComplete={() => completeChapter(17)} />
+    case 18: return <Chapter18 step={progress.chapter18Step} setStep={(chapter18Step) => update({ chapter18Step })} onComplete={() => completeChapter(18)} />
+    case 19: return <Chapter19 step={progress.chapter19Step} setStep={(chapter19Step) => update({ chapter19Step })} onComplete={() => completeChapter(19)} />
+    case 20: return <Chapter20 step={progress.chapter20Step} setStep={(chapter20Step) => update({ chapter20Step })} onComplete={() => completeChapter(20)} />
   }
 }
 
 function Completion({ onReview }: { onReview: () => void }) {
   return (
     <div className="completion-screen">
-      <div className="completion-badge">MODEL WORKSHOP · TERMINÉ</div>
-      <h1>Tu as mené une expérience ML complète.</h1>
-      <p>Tu es parti d’un problème de prédiction très simple, puis tu as construit et évalué plusieurs modèles sur de vraies données StatsBomb jusqu’à un holdout par match.</p>
+      <div className="completion-badge">FOOTBALL ANALYST MODE · TERMINÉ</div>
+      <h1>Tu as quitté le tutoriel linéaire.</h1>
+      <p>Tu peux maintenant construire un modèle, le valider, analyser ses erreurs, l’interroger, l’appliquer à un match complet et utiliser ses sorties pour chercher des questions football intéressantes.</p>
       <div className="completion-grid four-cards">
-        <div><span>01–07</span><strong>Comprendre.</strong><small>Cible, features, modèles, train/test, overfitting.</small></div>
-        <div><span>08–12</span><strong>Mesurer.</strong><small>Baseline, données réelles, calibration, cross-validation.</small></div>
-        <div><span>13–15</span><strong>Construire.</strong><small>Arbre, tuning, sélection et atelier libre.</small></div>
-        <div><span>16</span><strong>Éprouver.</strong><small>Holdout de matchs jamais utilisés pour décider.</small></div>
+        <div><span>01–07</span><strong>Comprendre.</strong><small>Problème, features, modèles, train/test.</small></div>
+        <div><span>08–12</span><strong>Mesurer.</strong><small>Données réelles, erreurs, calibration, validation.</small></div>
+        <div><span>13–16</span><strong>Construire.</strong><small>Arbre, tuning, workbench, holdout.</small></div>
+        <div><span>17–20</span><strong>Analyser.</strong><small>Erreurs, what-if, match xG, dashboard.</small></div>
       </div>
-      <div className="next-teaser wide"><span>Cycle suivant possible</span><strong>Quitter le tutoriel : analyser les erreurs, interpréter le modèle, produire un xG de match puis répondre à des questions football ouvertes.</strong></div>
-      <button className="secondary-button" onClick={onReview}>Rejouer le holdout</button>
+      <div className="next-teaser wide"><span>Suite ouverte</span><strong>Ensembles / boosting, interprétation avancée, davantage de matchs, profils joueurs, clustering, tracking — désormais déclenchés par une question football réelle.</strong></div>
+      <button className="secondary-button" onClick={onReview}>Rejouer le dashboard analyste</button>
     </div>
   )
 }

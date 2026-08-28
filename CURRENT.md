@@ -2,14 +2,13 @@
 
 ## Status
 
-The learning path now runs through Chapter 16 on branch `codex/cycles-2-3-workshop`.
+The learning path now runs through Chapter 20 on branch `codex/cycle-4-analyst-mode`.
 
-Main currently contains Chapters 01–10. The new branch finishes Cycle 2 and adds a full Cycle 3 Model Workshop.
+Main contains Chapters 01–16. This branch adds a less guided Cycle 4 focused on using the model as an analysis instrument rather than learning another isolated ML definition.
 
 ## Implemented learning staircase
 
-### Cycle 1 — 01–07
-
+### Cycle 1 — 01–07 · Understand
 - prediction and manual rules;
 - first logistic model;
 - features;
@@ -18,85 +17,90 @@ Main currently contains Chapters 01–10. The new branch finishes Cycle 2 and ad
 - overfitting and leakage;
 - first mini-lab comparing logistic and k-NN.
 
-### Cycle 2 — 08–12
+### Cycle 2 — 08–12 · Measure
+- baseline and class imbalance;
+- real StatsBomb raw data and preprocessing;
+- feature engineering;
+- calibration and Brier score;
+- configurable cross-validation.
 
-- 08: baseline, class imbalance, error types and threshold tradeoffs on real StatsBomb data;
-- 09: exact raw StatsBomb excerpt → model-ready row, provenance and derived features;
-- 10: feature engineering and one-feature-at-a-time ablation;
-- 11: learner-configurable calibration lab with reliability buckets and Brier score;
-- 12: learner-configurable cross-validation with 3/5/7 folds and score variability.
+### Cycle 3 — 13–16 · Build
+- browser-side decision tree;
+- validation-based hyperparameter tuning;
+- open model workbench;
+- match-level holdout challenge and external StatsBomb xG benchmark.
 
-### Cycle 3 — 13–16
-
-- 13: real browser-side decision tree with editable depth / minimum samples / feature set;
-- 14: explicit train / validation / test tuning workflow;
-- 15: open Model Workshop with logistic / k-NN / tree, features, hyperparameters, threshold, folds, run history and direction signals relative to a fixed baseline;
-- 16: final xG baseline challenge with three entire matches held out from development, candidate freeze, final reveal and comparison to both the simple baseline and StatsBomb xG reference.
+### Cycle 4 — 17–20 · Analyse
+- 17: configurable model + threshold, concrete error list, error filters and shot-level inspection;
+- 18: what-if / sensitivity lab comparing logistic, k-NN and tree on editable shot features;
+- 19: choose a real match, train on the other nine, predict every shot, aggregate team xG and compare to goals / StatsBomb xG;
+- 20: open 10-match analyst dashboard with model switching, team-match sorting by overperformance / underperformance / xG disagreement and drill-down to shots.
 
 ## Pedagogical mode
 
-The original concept-first sequence remains useful for Chapters 01–10, but the user playtests showed that QCM-style interactions were not enough.
+Chapters 01–10 remain concept-first.
 
-From Chapter 11 onward the dominant loop is now:
+Chapters 11–16 use the experiment loop:
 
-**question → configure → run → inspect result → change one thing → rerun → compare history → keep/reject → explain**
+**question → configure → run → inspect → change one thing → rerun → compare history → keep/reject**
 
-There should be no hidden correct configuration in the Model Workshop. Direction signals are always relative to an explicit baseline and can report mixed tradeoffs.
+Cycle 4 deliberately weakens the tutor framing again:
+
+**build an instrument → ask a football question → surface interesting rows → inspect the underlying shots → form a new hypothesis**
+
+There should be no hidden correct answer in Cycles 3–4.
 
 ## Runtime ML
 
-All current experiments execute in the browser on 297 sourced StatsBomb shots:
-
+Everything currently executes in the browser on 297 sourced StatsBomb shots across 10 matches:
 - logistic regression;
 - k-nearest-neighbours;
 - decision tree;
 - threshold metrics / confusion matrix;
-- Brier score;
-- calibration buckets;
+- Brier score and calibration buckets;
 - stratified cross-validation;
-- train / validation / test splitting;
-- match-level holdout.
+- train / validation / test split;
+- match-level holdout;
+- leave-one-match-out xG generation for the analyst dashboard.
 
-Python remains an offline data-preparation layer only.
+Python remains offline data preparation only.
 
 ## Data
 
-Real-data source:
+Source:
 - StatsBomb Open Data;
 - 1. Bundesliga 2023/24;
-- `competition_id = 9`;
-- `season_id = 281`;
-- 297 shots embedded from 10 matches.
+- competition 9 / season 281;
+- 297 shots from 10 matches.
 
-The generated dataset preserves selected exact upstream fields for the raw-data lesson and a reference StatsBomb xG value.
-
-`statsbomb_xg_reference` must never be used as a feature for our own xG model. It is only revealed as an external benchmark after the final holdout.
+`statsbomb_xg_reference` is benchmark-only and never an input feature for our model.
 
 ## Build / CI
 
-Permanent CI on `main` runs:
-- real dependency installation;
-- `npm run build` (`tsc -b && vite build`);
-- Python syntax checks.
+Permanent CI on `main` runs real dependency installation, `npm run build` and Python syntax checks.
 
-The next gate for this branch is CI + Vercel preview on Chapters 11–16 before merge.
+Next gate: CI + Vercel preview for Chapters 17–20 before merge.
 
 ## Next pedagogical gate
 
-Playtest Chapters 11–16 without restarting earlier chapters.
+The user should first playtest Chapters 11–20 rather than replay earlier material.
 
-Questions to answer:
-- Does Chapter 11 finally feel like experimentation rather than a quiz?
-- Is cross-validation understandable when manipulated repeatedly?
-- Does tree depth make model complexity tangible?
-- Does validation-vs-test tuning feel practically useful?
-- Does the Chapter 15 workbench provide enough feedback to form a direction without dictating a solution?
-- Does the Chapter 16 holdout feel like a meaningful mini-project?
+Key questions:
+- Does the open Model Workshop finally feel like genuine experimentation?
+- Can the learner articulate why one candidate is preferable without a hidden answer?
+- Does error analysis naturally produce new hypotheses?
+- Does the what-if lab make model behaviour tangible without implying causality?
+- Does match-level xG feel like a real analytical output rather than another lesson artifact?
+- Does the dashboard create curiosity about football questions?
 
-## After Cycle 3
+## After Chapter 20
 
-Do not automatically add another tutorial cycle. The likely next direction is a less guided Cycle 4:
-- error analysis;
-- model interpretation;
-- full-match xG output;
-- open football questions and analysis tasks.
+Do not automatically extend chapter count again.
+
+Future work should be driven by concrete questions and may include:
+- more matches / seasons;
+- ensembles and gradient boosting;
+- interpretation / feature effects;
+- player and team profiles;
+- clustering / similarity;
+- tracking / 360 data.
