@@ -12,7 +12,7 @@ const configs: ModelConfig[] = [
   { family: 'knn', features, k: 11 },
   { family: 'tree', features, depth: 3, minSamples: 8 },
 ]
-const sampleShots = realShots.filter((shot, index) => index % 23 === 0).slice(0, 8)
+const sampleShots = realShots.filter((_, index) => index % 23 === 0).slice(0, 8)
 
 export function Chapter18({ step, setStep, onComplete }: Props) {
   const [selectedIndex, setSelectedIndex] = useState(0)
