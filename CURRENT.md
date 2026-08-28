@@ -2,13 +2,9 @@
 
 ## Status
 
-A full pedagogy audit is in progress on branch `refactor/pedagogy-global-pass` after repeated beginner playtests showed that the app was locally interactive but globally introducing technical controls too early.
+The guided pedagogy audit is merged on `main`. A follow-up advanced-flow friction pass is now in progress on branch `fix/advanced-flow-friction` after the learner became blocked in Chapter 19 and reported that too many post-guided interactions behaved like mandatory QA chores.
 
-The audit is documented in `docs/pedagogy-audit-2026-08-28.md`.
-
-## Product structure after the audit
-
-The app now distinguishes three levels instead of presenting 20 chapters as one mandatory syllabus.
+## Product structure
 
 ### Guided beginner path — Chapters 01–12
 
@@ -33,21 +29,22 @@ The app now distinguishes three levels instead of presenting 20 chapters as one 
 
 ### Optional advanced practice — Chapters 13–16
 
-`Model Workshop` is explicitly an advanced lab, not part of the beginner mental-model staircase.
+`Model Workshop` is advanced practice, not part of the beginner staircase.
 
-- decision-tree capacity;
-- validation-based tuning;
-- open model workbench;
-- untouched match-level holdout.
+Current friction-pass rule:
+- one meaningful run is enough to continue;
+- extra model families / depths / feature sets are optional challenges;
+- no quotas exist purely to unlock the next screen.
 
 ### Optional application — Chapters 17–20
 
-`Football Analyst Mode` is open practice rather than another tutorial cycle.
+`Football Analyst Mode` is open practice.
 
-- error analysis;
-- what-if / sensitivity analysis;
-- match xG builder;
-- analyst dashboard.
+The friction pass changes these chapters so their core question works with a sensible default model:
+- 17: generate and inspect model errors; model controls are optional;
+- 18: one what-if perturbation is enough to continue;
+- 19: choose one real match, calculate its xG once, then continue; model tuning is optional;
+- 20: calculate the dashboard once and explore as much or as little as useful.
 
 ## Pedagogical contract
 
@@ -62,20 +59,21 @@ Hard invariants:
 - one conceptual variable per teaching experiment;
 - no tuning control before its effect has been taught;
 - QCM can force a prediction, but cannot be the primary learning mechanism;
-- model probabilities are always framed as estimates produced by a model, never as physical truth.
+- model probabilities are always framed as estimates produced by a model, never as physical truth;
+- post-guided exploration can suggest repetition but must not hard-block on arbitrary quotas.
 
 ## Navigation / UX
 
 Desktop remains a fixed-height app with independent sidebar / visual / lesson scrolling.
 
-The navigation now:
+The navigation:
 - shows progress against the 12-chapter guided path until Chapter 12 is complete;
 - hides individual advanced chapters until their section is unlocked;
 - presents Model Workshop and Football Analyst as optional post-guided sections.
 
 ## Runtime ML
 
-All experiments still execute client-side on 297 StatsBomb Open Data shots from 10 Bundesliga 2023/24 matches:
+All experiments execute client-side on 297 StatsBomb Open Data shots from 10 Bundesliga 2023/24 matches:
 - logistic regression;
 - k-nearest-neighbours;
 - decision tree;
@@ -99,17 +97,10 @@ Permanent CI on `main` runs:
 - `npm run build` (`tsc -b && vite build`);
 - Python syntax checks.
 
-The current branch must pass CI and Vercel preview before merge.
+The current friction branch must pass CI and Vercel preview before merge.
 
 ## Next gate
 
-Do not extend the chapter count.
+Do not extend the chapter count and do not ask the learner to manually QA every interaction.
 
-First validate the audited path as a learning tool, especially Chapters 06–12:
-- can the learner explain the three model mechanisms without relying on names?
-- does overfitting become obvious after the k=1 self-neighbour example?
-- are Chapter 10 percentages now unambiguous as whole-model test performance?
-- does calibration make `0–20%` immediately readable?
-- does Chapter 12 teach cross-validation without becoming a tuning workbench?
-
-Only after those answers are positive should work continue on new ML topics.
+First make the existing 01–20 experience stable, non-blocking and understandable enough to use end-to-end.

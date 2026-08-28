@@ -36,15 +36,17 @@ export function Chapter15({ step, setStep, onComplete }: Props) {
 
   const execute = () => {
     const result = crossValidate(realShots, config, folds, threshold, 211)
-    setRuns((current) => [...current.slice(-9), { config: { ...config, features: [...config.features] }, threshold, folds, result, direction: directionFor(result) }])
+    const run = { config: { ...config, features: [...config.features] }, threshold, folds, result, direction: directionFor(result) }
+    const nextRuns = [...runs.slice(-8), run]
+    setRuns(nextRuns)
+    setCandidate(nextRuns.length - 1)
   }
 
   if (step === 0) return (
     <LabShell visual={<div className="workshop-intro"><span>BASELINE</span><strong>distance + angle</strong><b>→</b><span>TON MODÈLE</span><strong>?</strong></div>}>
       <Eyebrow>Chapitre 15 · Model Workshop</Eyebrow>
-      <h1>Il n’y a plus de bonne réponse cachée.</h1>
-      <p className="lead">Ta référence est un modèle logistique simple avec distance + angle. Ton travail est d’essayer des configurations, de lire les compromis, puis de décider laquelle mérite d’être gardée.</p>
-      <div className="intent-card"><strong>Ce qui compte</strong><span>Brier pour la qualité des probabilités, accuracy pour les décisions au seuil choisi, et variation entre folds pour la stabilité. Une amélioration sur un axe peut coûter sur un autre.</span></div>
+      <h1>Tu peux maintenant construire une variante et la comparer à une référence simple.</h1>
+      <p className="lead">La baseline reste le modèle logistique distance + angle. Tu peux modifier les features, la famille ou certains réglages, puis regarder ce qui s’améliore ou se dégrade.</p>
       <ContinueButton onClick={() => setStep(1)}>Entrer dans le workbench</ContinueButton>
     </LabShell>
   )
@@ -53,17 +55,19 @@ export function Chapter15({ step, setStep, onComplete }: Props) {
     const latest = runs.at(-1)
     const families = new Set(runs.map((run) => run.config.family)).size
     const featureSets = new Set(runs.map((run) => [...run.config.features].sort().join('|'))).size
-    const ready = runs.length >= 5 && families >= 2 && featureSets >= 3 && candidate !== null
+    const chosen = candidate !== null ? runs[candidate] : undefined
     return (
       <LabShell visual={latest ? <DirectionBoard run={latest} baseline={baseline} /> : <BaselineBoard baseline={baseline} />}>
         <Eyebrow>Chapitre 15 · Atelier libre</Eyebrow>
-        <h1>Construis, lance, lis, recommence.</h1>
+        <h1>Change une chose, lance, puis lis le compromis.</h1>
         <ModelWorkbenchControls config={config} onChange={setConfig} threshold={threshold} onThresholdChange={setThreshold} showThreshold />
-        <div className="workbench-block inline-fold-control"><span>4 · Combien de folds pour comparer</span><div className="segmented-control">{[3, 5, 7].map((count) => <button key={count} className={folds === count ? 'selected' : ''} onClick={() => setFolds(count)}>{count}</button>)}</div></div>
+        <div className="workbench-block inline-fold-control"><span>Validation répétée</span><div className="segmented-control">{[3, 5, 7].map((count) => <button key={count} className={folds === count ? 'selected' : ''} onClick={() => setFolds(count)}>{count} folds</button>)}</div></div>
         <button className="primary-lab-button" onClick={execute}>▶ Lancer cette expérience</button>
-        {runs.length > 0 && <div className="candidate-table workshop-candidates">{runs.map((run, index) => <button key={index} className={candidate === index ? 'selected' : ''} onClick={() => setCandidate(index)}><span>#{index + 1}</span><strong>{modelLabel(run.config)}</strong><small>{run.config.features.length} feat. · {run.folds} folds · seuil {Math.round(run.threshold * 100)}%</small><b className={run.direction.positive >= 2 ? 'good-direction' : ''}>{run.direction.label}</b><em>Brier {run.result.meanBrier.toFixed(3)} · Acc {Math.round(run.result.meanAccuracy * 100)}%</em></button>)}</div>}
-        <p className="practice-gate">{runs.length < 5 ? `Fais encore ${5 - runs.length} expérience(s).` : families < 2 ? 'Essaie au moins deux familles de modèles.' : featureSets < 3 ? 'Teste au moins trois jeux de features différents.' : candidate === null ? 'Sélectionne le candidat que tu garderais.' : 'Tu as un candidat et assez d’expériences pour le défendre.'}</p>
-        {ready && <ContinueButton onClick={() => setStep(2)}>Garder ce candidat</ContinueButton>}
+        {runs.length > 0 && <div className="candidate-table workshop-candidates">{runs.map((run, index) => <button key={index} className={candidate === index ? 'selected' : ''} onClick={() => setCandidate(index)}><span>#{index + 1}</span><strong>{modelLabel(run.config)}</strong><small>{run.config.features.length} feat. · {run.folds} folds · seuil {Math.round(run.threshold * 100)}%</small><b className={run.direction.positive >= 2 ? 'good-direction' : ''}>{run.direction.label}</b><em>Erreur prob. {run.result.meanBrier.toFixed(3)} · décisions {Math.round(run.result.meanAccuracy * 100)}%</em></button>)}</div>}
+        {chosen && <>
+          <div className="optional-challenge"><strong>Exploration optionnelle</strong><span>{families >= 2 || featureSets >= 2 ? 'Tu as déjà commencé à comparer plusieurs hypothèses.' : 'Si tu veux aller plus loin, essaie une autre famille ou un autre jeu de features. Ce n’est pas requis pour continuer.'}</span></div>
+          <ContinueButton onClick={() => setStep(2)}>Garder ce candidat pour la suite</ContinueButton>
+        </>}
       </LabShell>
     )
   }
@@ -72,17 +76,16 @@ export function Chapter15({ step, setStep, onComplete }: Props) {
   return (
     <LabShell visual={chosen ? <DirectionBoard run={chosen} baseline={baseline} /> : undefined}>
       <Eyebrow>Chapitre 15 · Model selection</Eyebrow>
-      <h1>Ton modèle n’est pas “le meilleur”. C’est ton meilleur candidat actuel.</h1>
-      {chosen && <p className="lead">Tu gardes {modelLabel(chosen.config)} avec {chosen.config.features.length} features. Sur ton protocole : Brier {chosen.result.meanBrier.toFixed(3)}, accuracy {Math.round(chosen.result.meanAccuracy * 100)}%, variation {Math.round(chosen.result.accuracyRange * 100)} points.</p>}
-      <div className="reveal-card"><span>Ce que tu viens de faire</span><strong>Model selection : comparer plusieurs hypothèses sous un protocole commun, conserver l’historique et choisir un candidat selon des critères explicites.</strong></div>
-      <div className="checkpoint"><span>Prochaine épreuve</span><strong>Le chapitre suivant réserve des matchs entiers que ton workbench ne peut pas voir. À toi de décider quand ton modèle est prêt.</strong></div>
-      <ContinueButton onClick={onComplete}>Construire mon premier vrai xG baseline</ContinueButton>
+      <h1>Tu as choisi un candidat, pas découvert un modèle “vrai”.</h1>
+      {chosen && <p className="lead">Tu gardes {modelLabel(chosen.config)} avec {chosen.config.features.length} features. Sur ton protocole : erreur probabiliste {chosen.result.meanBrier.toFixed(3)}, décisions justes {Math.round(chosen.result.meanAccuracy * 100)}%, variation {Math.round(chosen.result.accuracyRange * 100)} points.</p>}
+      <div className="reveal-card"><span>Ce que tu viens de faire</span><strong>Comparer une hypothèse à une baseline sous un protocole commun, puis choisir un candidat en connaissant ses compromis.</strong></div>
+      <ContinueButton onClick={onComplete}>Tester ce candidat sur des matchs laissés de côté</ContinueButton>
     </LabShell>
   )
 }
 
 function BaselineBoard({ baseline }: { baseline: ReturnType<typeof crossValidate> }) {
-  return <div className="direction-board baseline"><span>Baseline</span><strong>Logistique · distance + angle</strong><div><b>{baseline.meanBrier.toFixed(3)}</b><small>Brier</small><b>{Math.round(baseline.meanAccuracy * 100)}%</b><small>accuracy</small></div></div>
+  return <div className="direction-board baseline"><span>Baseline</span><strong>Logistique · distance + angle</strong><div><b>{baseline.meanBrier.toFixed(3)}</b><small>erreur prob.</small><b>{Math.round(baseline.meanAccuracy * 100)}%</b><small>décisions justes</small></div></div>
 }
 
 function DirectionBoard({ run, baseline }: { run: Run; baseline: ReturnType<typeof crossValidate> }) {

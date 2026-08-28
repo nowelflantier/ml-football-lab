@@ -22,7 +22,9 @@ export function Chapter17({ step, setStep, onComplete }: Props) {
 
   const execute = () => {
     const evaluation = evaluateConfig(split.train, split.test, config, threshold)
-    setRuns((current) => [...current.slice(-5), { config: { ...config, features: [...config.features] }, threshold, evaluation }])
+    setRuns((current) => [...current.slice(-4), { config: { ...config, features: [...config.features] }, threshold, evaluation }])
+    setSelectedId(null)
+    setInspected([])
   }
 
   const latest = runs.at(-1)
@@ -49,40 +51,42 @@ export function Chapter17({ step, setStep, onComplete }: Props) {
 
   if (step === 0) return (
     <LabShell visual={<div className="analyst-intro"><span>Score global</span><strong>?</strong><b>→</b><span>Quelles erreurs&nbsp;?</span><strong>?</strong></div>}>
-      <Eyebrow>Chapitre 17 · Error Analysis</Eyebrow>
-      <h1>Un score moyen ne te dit pas où ton modèle se trompe.</h1>
-      <p className="lead">Tu vas arrêter de regarder seulement une métrique globale. Le but est de trouver des erreurs concrètes, les inspecter et chercher des motifs qui pourraient inspirer la prochaine feature ou le prochain réglage.</p>
-      <ContinueButton onClick={() => setStep(1)}>Ouvrir la table des erreurs</ContinueButton>
+      <Eyebrow>Chapitre 17 · Analyse des erreurs</Eyebrow>
+      <h1>Un score moyen ne te dit pas où le modèle se trompe.</h1>
+      <p className="lead">On va générer les erreurs d’un modèle sur des tirs de test et revenir à des cas concrets : joueur, distance, angle, type de tir.</p>
+      <ContinueButton onClick={() => setStep(1)}>Générer les erreurs</ContinueButton>
     </LabShell>
   )
 
   if (step === 1) return (
-    <LabShell visual={latest ? <ErrorSummary latest={latest} errorCount={errors.length} /> : <div className="empty-lab-visual"><strong>Aucun modèle lancé</strong><span>Configure une version puis lance-la.</span></div>}>
-      <Eyebrow>Chapitre 17 · Chercher les erreurs intéressantes</Eyebrow>
-      <h1>Construis une version, puis ouvre ses erreurs une par une.</h1>
-      <ModelWorkbenchControls config={config} onChange={setConfig} threshold={threshold} onThresholdChange={setThreshold} showThreshold />
-      <button className="primary-lab-button" onClick={execute}>▶ Entraîner + générer les erreurs</button>
+    <LabShell visual={latest ? <ErrorSummary latest={latest} errorCount={errors.length} /> : <div className="empty-lab-visual"><strong>Aucun modèle lancé</strong><span>Le modèle par défaut suffit pour commencer.</span></div>}>
+      <Eyebrow>Chapitre 17 · Chercher des erreurs intéressantes</Eyebrow>
+      <h1>Lance une version puis ouvre les cas qui t’intriguent.</h1>
+      <button className="primary-lab-button" onClick={execute}>▶ Générer les erreurs du modèle par défaut</button>
+      <details className="advanced-options">
+        <summary>Changer le modèle ou le seuil — optionnel</summary>
+        <ModelWorkbenchControls config={config} onChange={setConfig} threshold={threshold} onThresholdChange={setThreshold} showThreshold />
+      </details>
       {latest && <>
         <div className="segmented-control analyst-filters">
           {([['all','Toutes'],['missed','Buts ratés'],['false-alert','Fausses alertes'],['surprising','Très confiantes']] as const).map(([value,label]) => <button key={value} className={filter === value ? 'selected' : ''} onClick={() => setFilter(value)}>{label}</button>)}
         </div>
         <div className="error-analysis-grid">
           <div className="error-list">{visibleErrors.slice(0, 12).map((item) => <button key={item.shot.id} className={selected?.shot.id === item.shot.id ? 'selected' : ''} onClick={() => inspect(item.shot.id)}><span>{item.shot.goal ? 'BUT RÉEL' : 'PAS BUT'}</span><strong>{Math.round(item.probability * 100)}%</strong><small>{item.shot.provenance?.player ?? 'Joueur'} · {item.shot.distance.toFixed(1)}m · {item.shot.angle.toFixed(0)}°</small></button>)}</div>
-          {selected && <div className="error-inspector"><span>{selected.shot.provenance?.team ?? 'Équipe'}</span><strong>{selected.shot.provenance?.player ?? 'Joueur inconnu'}</strong><small>minute {selected.shot.provenance?.minute ?? '?'} · {selected.shot.body_part ?? 'body part ?'} · {selected.shot.shot_type ?? 'type ?'}</small><div><p><b>{Math.round(selected.probability * 100)}%</b><small>probabilité modèle</small></p><p><b>{selected.shot.goal ? 'BUT' : 'PAS BUT'}</b><small>résultat réel</small></p></div><p>distance {selected.shot.distance.toFixed(1)}m · angle {selected.shot.angle.toFixed(0)}° · pression {selected.shot.under_pressure ? 'oui' : 'non'} · première intention {selected.shot.first_time ? 'oui' : 'non'}</p></div>}
+          {selected && <div className="error-inspector"><span>{selected.shot.provenance?.team ?? 'Équipe'}</span><strong>{selected.shot.provenance?.player ?? 'Joueur inconnu'}</strong><small>minute {selected.shot.provenance?.minute ?? '?'} · {selected.shot.body_part ?? 'partie du corps ?'} · {selected.shot.shot_type ?? 'type ?'}</small><div><p><b>{Math.round(selected.probability * 100)}%</b><small>probabilité modèle</small></p><p><b>{selected.shot.goal ? 'BUT' : 'PAS BUT'}</b><small>résultat réel</small></p></div><p>distance {selected.shot.distance.toFixed(1)}m · angle {selected.shot.angle.toFixed(0)}° · pression {selected.shot.under_pressure ? 'oui' : 'non'} · première intention {selected.shot.first_time ? 'oui' : 'non'}</p></div>}
         </div>
+        <div className="optional-challenge"><strong>Exploration optionnelle</strong><span>{inspected.length ? `Tu as ouvert ${inspected.length} erreur(s).` : 'Clique sur une erreur si tu veux chercher ce qui pourrait l’expliquer.'} Tu peux aussi filtrer les buts ratés ou les fausses alertes.</span></div>
+        <ContinueButton onClick={() => setStep(2)}>J’ai compris l’idée de l’analyse d’erreurs</ContinueButton>
       </>}
-      <p className="practice-gate">{runs.length < 3 ? `Fais encore ${3 - runs.length} version(s) du modèle.` : inspected.length < 3 ? `Inspecte encore ${3 - inspected.length} erreur(s) concrète(s).` : 'Tu as assez d’éléments pour faire une vraie analyse d’erreurs.'}</p>
-      {runs.length >= 3 && inspected.length >= 3 && <ContinueButton onClick={() => setStep(2)}>Formaliser cette méthode</ContinueButton>}
     </LabShell>
   )
 
   return (
     <LabShell visual={latest ? <ErrorSummary latest={latest} errorCount={errors.length} /> : undefined}>
-      <Eyebrow>Chapitre 17 · Error Analysis</Eyebrow>
-      <h1>Les erreurs deviennent des données pour ta prochaine hypothèse.</h1>
-      <p className="lead">Tu as inspecté des tirs précis au lieu de rester au niveau du score. C’est souvent là qu’on découvre qu’un modèle manque d’une information, qu’un sous-groupe se comporte différemment ou qu’un seuil crée un mauvais compromis.</p>
-      <div className="reveal-card"><span>Pratique débloquée</span><strong>Error analysis : classer les erreurs, inspecter les cas les plus informatifs et chercher des patterns avant de modifier le modèle.</strong></div>
-      <div className="checkpoint"><span>Réflexe analyste</span><strong>Je ne demande pas seulement “combien d’erreurs ?” mais “quelles erreurs, sur quels tirs, et qu’est-ce qu’elles ont en commun ?”</strong></div>
+      <Eyebrow>Chapitre 17 · Error analysis</Eyebrow>
+      <h1>Les erreurs deviennent une source d’hypothèses.</h1>
+      <p className="lead">Au lieu de rester au niveau d’un score, tu peux regarder quels types de tirs posent problème et décider ensuite si une feature, un seuil ou un autre modèle mérite d’être testé.</p>
+      <div className="reveal-card"><span>Pratique</span><strong>Classer les erreurs, inspecter des cas concrets et chercher des motifs avant de modifier le modèle.</strong></div>
       <ContinueButton onClick={onComplete}>Passer au laboratoire What-if</ContinueButton>
     </LabShell>
   )

@@ -10,6 +10,7 @@ import './analyst.css'
 import './bridge.css'
 import './concrete11.css'
 import './pedagogy-pass.css'
+import './advanced-flow.css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

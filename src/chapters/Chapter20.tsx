@@ -46,7 +46,12 @@ export function Chapter20({ step, setStep, onComplete }: Props) {
   const [inspected, setInspected] = useState<string[]>([])
   const latest = runs.at(-1)
 
-  const execute = () => setRuns((current) => [...current.slice(-3), { config: { ...config, features: [...config.features] }, rows: buildRows(config) }])
+  const execute = () => {
+    setRuns((current) => [...current.slice(-2), { config: { ...config, features: [...config.features] }, rows: buildRows(config) }])
+    setSelectedKey(null)
+    setInspected([])
+  }
+
   const sorted = latest ? [...latest.rows].sort((a, b) => {
     if (sortMode === 'over') return (b.goals - b.modelXg) - (a.goals - a.modelXg)
     if (sortMode === 'under') return (a.goals - a.modelXg) - (b.goals - b.modelXg)
@@ -56,46 +61,48 @@ export function Chapter20({ step, setStep, onComplete }: Props) {
   const inspect = (key: string) => { setSelectedKey(key); setInspected((current) => current.includes(key) ? current : [...current, key]) }
 
   if (step === 0) return (
-    <LabShell visual={<div className="dashboard-intro"><span>10 matchs</span><strong>20 lignes équipe-match</strong><b>→</b><span>Questions ouvertes</span><strong>où regarder&nbsp;?</strong></div>}>
+    <LabShell visual={<div className="dashboard-intro"><span>10 matchs</span><strong>20 lignes équipe-match</strong><b>→</b><span>Questions</span><strong>où regarder&nbsp;?</strong></div>}>
       <Eyebrow>Chapitre 20 · Football Analyst Mode</Eyebrow>
-      <h1>Il n’y a plus de prochain bouton “bonne réponse”.</h1>
-      <p className="lead">Tu vas générer une petite table d’analyse sur les 10 matchs. Chaque match est prédit par un modèle entraîné sur les neuf autres, puis tu choisis toi-même ce qui mérite d’être inspecté.</p>
-      <div className="intent-card"><strong>Trois angles de départ</strong><span>Surperformance : beaucoup plus de buts que de xG · sous-performance : l’inverse · désaccord : ton modèle et StatsBomb évaluent très différemment les occasions.</span></div>
-      <ContinueButton onClick={() => setStep(1)}>Ouvrir le dashboard</ContinueButton>
+      <h1>On utilise maintenant le modèle pour faire émerger des matchs intéressants.</h1>
+      <p className="lead">Chaque match est prédit par un modèle entraîné sur les neuf autres. Ensuite on trie les équipes selon un angle : beaucoup plus de buts que de xG, beaucoup moins, ou fort désaccord avec StatsBomb.</p>
+      <ContinueButton onClick={() => setStep(1)}>Construire le dashboard</ContinueButton>
     </LabShell>
   )
 
   if (step === 1) return (
-    <LabShell visual={latest ? <DashboardHeadline row={sorted[0]} mode={sortMode} config={latest.config} /> : <div className="empty-lab-visual"><strong>Dashboard vide</strong><span>Choisis un modèle puis calcule les 10 matchs.</span></div>}>
+    <LabShell visual={latest ? <DashboardHeadline row={sorted[0]} mode={sortMode} config={latest.config} /> : <div className="empty-lab-visual"><strong>Dashboard vide</strong><span>Le modèle par défaut suffit pour commencer.</span></div>}>
       <Eyebrow>Chapitre 20 · Tableau analyste</Eyebrow>
-      <h1>Change le modèle, change la question, inspecte les lignes.</h1>
-      <ModelWorkbenchControls config={config} onChange={setConfig} />
-      <button className="primary-lab-button" onClick={execute}>▶ Recalculer les 10 matchs</button>
+      <h1>Calcule, choisis un angle de tri, puis ouvre une ligne.</h1>
+      <button className="primary-lab-button" onClick={execute}>▶ Calculer les 10 matchs</button>
+      <details className="advanced-options">
+        <summary>Changer le modèle — optionnel</summary>
+        <ModelWorkbenchControls config={config} onChange={setConfig} />
+      </details>
       {latest && <>
-        <div className="segmented-control dashboard-sorts"><button className={sortMode === 'over' ? 'selected' : ''} onClick={() => setSortMode('over')}>Surperformance</button><button className={sortMode === 'under' ? 'selected' : ''} onClick={() => setSortMode('under')}>Sous-performance</button><button className={sortMode === 'disagree' ? 'selected' : ''} onClick={() => setSortMode('disagree')}>Désaccord xG</button></div>
+        <div className="segmented-control dashboard-sorts"><button className={sortMode === 'over' ? 'selected' : ''} onClick={() => setSortMode('over')}>Plus de buts que xG</button><button className={sortMode === 'under' ? 'selected' : ''} onClick={() => setSortMode('under')}>Moins de buts que xG</button><button className={sortMode === 'disagree' ? 'selected' : ''} onClick={() => setSortMode('disagree')}>Désaccord avec StatsBomb</button></div>
+        <div className="plain-explanation"><strong>Ce que fait le tri</strong><span>Il ne prouve rien tout seul. Il sert juste à faire remonter les lignes qui méritent peut-être d’être inspectées.</span></div>
         <div className="analyst-dashboard">
           <div className="dashboard-table">{sorted.map((row) => <button key={row.key} className={selected?.key === row.key ? 'selected' : ''} onClick={() => inspect(row.key)}><span>{row.team}</span><small>match #{row.matchId} · {row.shots} tirs</small><b>{row.goals} buts</b><em>{row.modelXg.toFixed(2)} xG modèle</em><i>{row.statsbombXg.toFixed(2)} SB</i></button>)}</div>
-          {selected && <div className="dashboard-detail"><span>{selected.team} · match #{selected.matchId}</span><div className="dashboard-detail-metrics"><p><b>{selected.goals}</b><small>buts</small></p><p><b>{selected.modelXg.toFixed(2)}</b><small>ton xG</small></p><p><b>{selected.statsbombXg.toFixed(2)}</b><small>StatsBomb</small></p></div><div className="dashboard-shot-mini">{selected.matchShots.map((shot, index) => <p key={shot.id}><span>{shot.provenance?.player ?? 'Joueur'}</span><b>{selected.probabilities[index].toFixed(2)}</b><small>{shot.goal ? '⚽' : ''} SB {(shot.statsbomb_xg_reference ?? 0).toFixed(2)}</small></p>)}</div></div>}
+          {selected && <div className="dashboard-detail"><span>{selected.team} · match #{selected.matchId}</span><div className="dashboard-detail-metrics"><p><b>{selected.goals}</b><small>buts</small></p><p><b>{selected.modelXg.toFixed(2)}</b><small>notre xG</small></p><p><b>{selected.statsbombXg.toFixed(2)}</b><small>StatsBomb</small></p></div><div className="dashboard-shot-mini">{selected.matchShots.map((shot, index) => <p key={shot.id}><span>{shot.provenance?.player ?? 'Joueur'}</span><b>{selected.probabilities[index].toFixed(2)}</b><small>{shot.goal ? '⚽' : ''} SB {(shot.statsbomb_xg_reference ?? 0).toFixed(2)}</small></p>)}</div></div>}
         </div>
+        <div className="optional-challenge"><strong>Exploration optionnelle</strong><span>{inspected.length ? `Tu as ouvert ${inspected.length} ligne(s).` : 'Clique sur une équipe si tu veux revenir aux tirs qui expliquent son total.'} Tu peux aussi changer le tri ou recalculer avec un autre modèle.</span></div>
+        <ContinueButton onClick={() => setStep(2)}>J’ai compris comment utiliser ce dashboard</ContinueButton>
       </>}
-      <p className="practice-gate">{runs.length < 2 ? `Recalcule encore ${2 - runs.length} modèle(s) différent(s).` : inspected.length < 3 ? `Inspecte encore ${3 - inspected.length} ligne(s) équipe-match.` : 'Tu utilises maintenant le modèle comme un outil d’analyse.'}</p>
-      {runs.length >= 2 && inspected.length >= 3 && <ContinueButton onClick={() => setStep(2)}>Clore le Cycle 4</ContinueButton>}
     </LabShell>
   )
 
   return (
     <LabShell visual={latest && sorted[0] ? <DashboardHeadline row={sorted[0]} mode={sortMode} config={latest.config} /> : undefined}>
       <Eyebrow>Cycle 4 terminé · Analyst Mode</Eyebrow>
-      <h1>Le modèle n’est plus le sujet. Il devient un instrument.</h1>
-      <p className="lead">Tu peux maintenant construire une version, l’appliquer hors entraînement, agréger ses prédictions, détecter des écarts et revenir aux tirs individuels pour expliquer ce que tu observes.</p>
-      <div className="reveal-card"><span>Changement de niveau</span><strong>À partir d’ici, les prochaines étapes peuvent partir de questions football plutôt que de notions ML : pourquoi ce match a-t-il un gros écart ? quel joueur crée les meilleures occasions ? où notre modèle diverge-t-il d’une référence ?</strong></div>
-      <div className="checkpoint"><span>Suite possible</span><strong>Ensembles / boosting, interprétation plus poussée, davantage de matchs, profils joueurs, clustering ou tracking — mais désormais au service d’une question réelle.</strong></div>
-      <ContinueButton onClick={onComplete}>Terminer le parcours guidé</ContinueButton>
+      <h1>Le modèle devient un instrument pour chercher où regarder.</h1>
+      <p className="lead">Tu peux produire des xG hors entraînement, agréger les tirs par équipe, trier les écarts puis revenir aux observations individuelles pour comprendre ce que le tableau résume.</p>
+      <div className="reveal-card"><span>À partir d’ici</span><strong>Les prochaines étapes devraient partir d’une question football réelle, pas d’un nouveau chapitre obligatoire.</strong></div>
+      <ContinueButton onClick={onComplete}>Terminer</ContinueButton>
     </LabShell>
   )
 }
 
 function DashboardHeadline({ row, mode, config }: { row: RecordRow; mode: SortMode; config: ModelConfig }) {
   const value = mode === 'disagree' ? Math.abs(row.modelXg - row.statsbombXg) : row.goals - row.modelXg
-  return <div className="dashboard-headline"><span>{modelLabel(config)} · {mode === 'over' ? 'surperformance' : mode === 'under' ? 'sous-performance' : 'désaccord xG'}</span><strong>{row.team}</strong><small>match #{row.matchId}</small><div><b>{row.goals} buts</b><b>{row.modelXg.toFixed(2)} xG</b><b>{value >= 0 ? '+' : ''}{value.toFixed(2)} écart</b></div></div>
+  return <div className="dashboard-headline"><span>{modelLabel(config)} · {mode === 'over' ? 'plus de buts que xG' : mode === 'under' ? 'moins de buts que xG' : 'désaccord xG'}</span><strong>{row.team}</strong><small>match #{row.matchId}</small><div><b>{row.goals} buts</b><b>{row.modelXg.toFixed(2)} xG</b><b>{value >= 0 ? '+' : ''}{value.toFixed(2)} écart</b></div></div>
 }
