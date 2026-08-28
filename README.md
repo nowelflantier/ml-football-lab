@@ -1,16 +1,20 @@
 # ML Football Lab
 
-A tiny interactive course for learning machine-learning fundamentals through football, one small conceptual step at a time.
+An interactive football-first machine-learning lab built with Vite, React and TypeScript.
 
-## V0
+The project teaches ML by making the learner encounter a problem before revealing the concept that names it. It starts with a hand-written distance rule and progressively reaches real browser-side train/test evaluation, probabilistic xG intuition, overfitting, leakage and model comparison.
 
-Three chapters:
+## Cycle 1
 
-1. **Predict** — inspect shots, make predictions, then build a manual distance rule.
-2. **Learn** — let a simple logistic model learn from the same examples.
-3. **Describe** — add shot angle and discover the idea of a feature.
+1. Predict — build a manual rule.
+2. Learn — train a first logistic model.
+3. Describe — discover features through distance + angle.
+4. Test — separate train/test and observe generalisation.
+5. Probabilise — connect model probabilities to xG.
+6. Distrust — experience overfitting and leakage.
+7. Compare — compare logistic regression and k-NN, then tune k.
 
-The V0 intentionally stops before formal train/test evaluation, overfitting, model comparison, clustering, or neural networks.
+All model experiments in Chapters 04–07 are computed in the browser from the current dataset. There is no ML backend in Cycle 1.
 
 ## Run locally
 
@@ -19,19 +23,15 @@ npm install
 npm run dev
 ```
 
-Checks:
+Validation:
 
 ```bash
 npm run typecheck
 npm run build
 ```
 
-## Data status
+## Data provenance
 
-`src/data/shots.ts` currently contains **explicitly labelled pedagogical seed fixtures**. They are plausible football shots designed to validate the learning experience; they are not presented as raw StatsBomb observations.
+`src/data/shots.ts` currently contains explicit pedagogical fixtures, not claimed real observations. `scripts/prepare-shots.py` converts StatsBomb event JSON into the same shape so a sourced dataset can replace the seed in a later cycle without rewriting the app architecture.
 
-`scripts/prepare-shots.py` converts StatsBomb Open Data event JSON into the same small shape (`x`, `y`, metric distance, shooting angle, goal). This lets us replace the seed with sourced observations without changing the lesson components.
-
-StatsBomb Open Data: https://github.com/hudl/open-data
-
-See `docs/data.md` before changing data provenance.
+See `AGENTS.md`, `CURRENT.md`, `DECISIONS.md` and `docs/` before making structural changes.
