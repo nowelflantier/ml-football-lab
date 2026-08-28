@@ -1,218 +1,217 @@
 import { useMemo, useState } from 'react'
 import { ContinueButton, Eyebrow, LabShell } from '../components/LabShell'
-import { UnderTheHood } from '../components/UnderTheHood'
 import { realShots } from '../data/realShots'
 import { stratifiedSplit } from '../ml/evaluation'
-import { evaluateConfig } from '../ml/modelLab'
 import { predictProbability, shotLabels, trainLogistic } from '../ml/logistic'
-import { realShotRow, realShotRows, type RealFeatureKey } from '../ml/realFeatures'
 import { trainDecisionTree, type TreeNode } from '../ml/tree'
-import { calibrationBuckets } from '../ml/validation'
 import type { Shot } from '../types'
 
 type Props = { step: number; setStep: (step: number) => void; onComplete: () => void }
-type Neighbor = { shot: Shot; distance: number }
-type TreeTrace = { label: string; answer: 'oui' | 'non' }
+type Neighbor = { shot: Shot; gap: number }
+type TreeTrace = { question: string; answer: 'oui' | 'non' }
 
-const features: RealFeatureKey[] = ['distance', 'angle']
-const featureNames = ['Distance', 'Angle']
-const logisticConfig = { family: 'logistic' as const, features }
+const initialDistance = 11
 
 export function Chapter11({ step, setStep, onComplete }: Props) {
   const split = useMemo(() => stratifiedSplit(realShots, 83, 0.35), [])
-  const samples = useMemo(() => pickSampleShots(split.test), [split.test])
-  const [selectedIndex, setSelectedIndex] = useState(0)
-  const [k, setK] = useState(7)
-  const [threshold, setThreshold] = useState(0.25)
-  const [bucketIndex, setBucketIndex] = useState(0)
+  const [distance, setDistance] = useState(initialDistance)
+  const [k, setK] = useState(5)
+  const [trendTouched, setTrendTouched] = useState(false)
+  const [neighborTouched, setNeighborTouched] = useState(false)
+  const [treeTouched, setTreeTouched] = useState(false)
+  const [compareTouched, setCompareTouched] = useState(false)
 
-  const shot = samples[selectedIndex] ?? split.test[0]
-  const trainRows = useMemo(() => realShotRows(split.train, features), [split.train])
+  const trainRows = useMemo(() => split.train.map((shot) => [shot.distance]), [split.train])
   const labels = useMemo(() => shotLabels(split.train), [split.train])
   const logistic = useMemo(() => trainLogistic(trainRows, labels, 3000), [trainRows, labels])
   const tree = useMemo(() => trainDecisionTree(trainRows, labels, 3, 8), [trainRows, labels])
 
-  const logisticProbability = predictProbability(logistic, realShotRow(shot, features))
-  const neighbors = nearestNeighbors(split.train, shot, k)
-  const knnProbability = neighbors.filter((item) => item.shot.goal).length / neighbors.length
-  const path = traceTree(tree.root, realShotRow(shot, features))
-  const treeProbability = leafProbability(tree.root, realShotRow(shot, features))
+  const smoothProbability = predictProbability(logistic, [distance])
+  const neighbors = nearestByDistance(split.train, distance, k)
+  const neighborGoals = neighbors.filter((neighbor) => neighbor.shot.goal).length
+  const neighborProbability = neighbors.length ? neighborGoals / neighbors.length : 0
+  const treeTrace = traceTree(tree.root, distance)
+  const treeProbability = leafProbability(tree.root, distance)
 
-  const metrics = evaluateConfig(split.train, split.test, logisticConfig, threshold)
-  const correct = metrics.truePositive + metrics.trueNegative
-  const actualGoals = metrics.truePositive + metrics.falseNegative
-  const alerts = metrics.truePositive + metrics.falsePositive
+  if (step === 0) {
+    return (
+      <LabShell visual={<ThreeWaysIntro />}>
+        <Eyebrow>Chapitre 11 · Trois façons de prédire</Eyebrow>
+        <h1>Oublie les mots « logistique », « k-NN » et « arbre » pendant cinq minutes.</h1>
+        <p className="lead">On a des centaines de tirs passés avec leur distance et leur résultat. Un nouveau tir arrive à <b>11 mètres</b>. La seule question est : <b>comment utiliser le passé pour lui donner une chance de but ?</b></p>
+        <div className="concrete-story-card">
+          <span>Même problème, trois raisonnements possibles</span>
+          <strong>A · apprendre une tendance générale</strong>
+          <strong>B · regarder des tirs passés qui ressemblent au nouveau</strong>
+          <strong>C · construire une petite suite de règles</strong>
+        </div>
+        <p className="microcopy">Les noms techniques arriveront seulement après que chaque raisonnement soit clair.</p>
+        <ContinueButton onClick={() => setStep(1)}>Essayer la méthode A</ContinueButton>
+      </LabShell>
+    )
+  }
 
-  const probabilityEval = evaluateConfig(split.train, split.test, logisticConfig, 0.25)
-  const buckets = calibrationBuckets(probabilityEval.probabilities, probabilityEval.labels, 5)
-  const bucket = buckets[bucketIndex] ?? buckets[0]
+  if (step === 1) {
+    return (
+      <LabShell visual={<TrendVisual model={logistic} distance={distance} />}>
+        <Eyebrow>11.1 · Méthode A — apprendre une tendance</Eyebrow>
+        <h1>Imagine une courbe qui résume tous les tirs passés.</h1>
+        <p className="lead">Exemple banal : pour estimer le temps d’un trajet, tu sais que <b>plus la distance augmente, plus le trajet tend à durer</b>. Il n’existe pas forcément une frontière brutale à 10 km. Ici on fait pareil avec les tirs.</p>
+        <div className="concrete-rule-card">
+          <span>Pour cette démonstration, le modèle ne voit qu’une seule information</span>
+          <strong>Distance du tir</strong>
+          <small>On cache volontairement l’angle, le joueur, le type de tir, etc.</small>
+        </div>
+        <label className="concrete-slider">
+          <span>Déplace le même tir plus près ou plus loin</span>
+          <strong>{distance.toFixed(0)} m → {Math.round(smoothProbability * 100)}% de chance estimée</strong>
+          <input type="range" min="5" max="30" step="1" value={distance} onChange={(event) => { setDistance(Number(event.target.value)); setTrendTouched(true) }} />
+        </label>
+        <div className="plain-explanation"><strong>Ce qui se passe vraiment</strong><span>La machine a regardé <b>tous</b> les tirs d’entraînement et a appris une courbe. Quand tu changes seulement la distance, elle lit un autre endroit de cette même courbe.</span></div>
+        {trendTouched && <div className="name-reveal"><span>Nom technique, maintenant seulement</span><strong>Régression logistique</strong><small>Ici : une méthode qui apprend une relation lisse pour produire une probabilité.</small></div>}
+        <ContinueButton disabled={!trendTouched} onClick={() => { setDistance(initialDistance); setStep(2) }}>Essayer la méthode B</ContinueButton>
+      </LabShell>
+    )
+  }
 
-  const shotPicker = (
-    <div className="bridge-shot-selector">
-      {samples.map((item, index) => (
-        <button key={item.id} className={selectedIndex === index ? 'selected' : ''} onClick={() => setSelectedIndex(index)}>
-          Tir {index + 1} · {item.distance.toFixed(0)}m · {item.goal ? '⚽' : 'raté'}
-        </button>
-      ))}
-    </div>
-  )
+  if (step === 2) {
+    return (
+      <LabShell visual={<NeighborsVisual neighbors={neighbors} goals={neighborGoals} />}>
+        <Eyebrow>11.2 · Méthode B — chercher des cas ressemblants</Eyebrow>
+        <h1>Cette fois, aucune grande courbe : on cherche simplement des tirs proches du tien.</h1>
+        <p className="lead">Métaphore : pour estimer le prix d’un appartement de 45 m², tu peux regarder le prix de <b>quelques appartements très similaires</b> plutôt que calculer une grande tendance sur toute la ville.</p>
+        <div className="concrete-rule-card">
+          <span>Nouveau tir à estimer</span>
+          <strong>{distance.toFixed(0)} mètres</strong>
+          <small>On cherche les tirs passés dont la distance est la plus proche.</small>
+        </div>
+        <div className="neighbor-choice-row">
+          {[3, 5, 9].map((value) => <button key={value} className={k === value ? 'selected' : ''} onClick={() => { setK(value); setNeighborTouched(true) }}>Regarder {value} tirs similaires</button>)}
+        </div>
+        <div className="plain-explanation"><strong>Calcul visible</strong><span>Parmi les {neighbors.length} tirs les plus proches, <b>{neighborGoals}</b> ont fini en but. La méthode répond donc simplement <b>{neighborGoals}/{neighbors.length} ≈ {Math.round(neighborProbability * 100)}%</b>.</span></div>
+        <label className="concrete-slider compact">
+          <span>Change aussi la distance du nouveau tir</span>
+          <strong>{distance.toFixed(0)} m</strong>
+          <input type="range" min="5" max="30" step="1" value={distance} onChange={(event) => { setDistance(Number(event.target.value)); setNeighborTouched(true) }} />
+        </label>
+        {neighborTouched && <div className="name-reveal"><span>Nom technique</span><strong>k-NN</strong><small>k nearest neighbours = « les k plus proches voisins ».</small></div>}
+        <ContinueButton disabled={!neighborTouched} onClick={() => { setDistance(initialDistance); setStep(3) }}>Essayer la méthode C</ContinueButton>
+      </LabShell>
+    )
+  }
 
-  if (step === 0) return (
-    <LabShell visual={<ModelOverview />}>
-      <Eyebrow>Chapitre 11 · Comprendre les outils</Eyebrow>
-      <h1>On t’a donné trop de boutons avant de t’expliquer ce qu’ils pilotent.</h1>
-      <p className="lead">On reprend donc les trois familles de modèles et les chiffres de mesure, un par un. Pas de tuning tant que leur rôle n’est pas clair.</p>
-      <div className="intent-card"><strong>À la sortie</strong><span>Tu dois savoir raconter avec tes mots : logistique, k-NN, arbre, accuracy, recall, precision, calibration et Brier.</span></div>
-      <ContinueButton onClick={() => setStep(1)}>Commencer par la logistique</ContinueButton>
-    </LabShell>
-  )
+  if (step === 3) {
+    return (
+      <LabShell visual={<RulesVisual trace={treeTrace} probability={treeProbability} />}>
+        <Eyebrow>11.3 · Méthode C — poser des questions successives</Eyebrow>
+        <h1>Comme un petit questionnaire « si / alors ».</h1>
+        <p className="lead">Métaphore : pour choisir un manteau, tu pourrais demander « fait-il moins de 10°C ? », puis « est-ce qu’il pleut ? ». Ici la machine apprend elle-même ses questions à partir des tirs passés.</p>
+        <div className="concrete-rule-card">
+          <span>Le tir entre dans le questionnaire</span>
+          <strong>{distance.toFixed(0)} mètres</strong>
+          <small>À chaque question, la réponse oui/non choisit la branche suivante.</small>
+        </div>
+        <label className="concrete-slider">
+          <span>Déplace le tir et regarde son chemin changer</span>
+          <strong>{distance.toFixed(0)} m → groupe final à {Math.round(treeProbability * 100)}%</strong>
+          <input type="range" min="5" max="30" step="1" value={distance} onChange={(event) => { setDistance(Number(event.target.value)); setTreeTouched(true) }} />
+        </label>
+        <div className="plain-explanation"><strong>Le pourcentage final vient d’où ?</strong><span>Une fois le chemin terminé, le tir tombe dans un groupe de tirs passés. Le pourcentage correspond à la proportion de buts observée dans ce groupe.</span></div>
+        {treeTouched && <div className="name-reveal"><span>Nom technique</span><strong>Arbre de décision</strong><small>Un ensemble de règles « si / alors » apprises automatiquement.</small></div>}
+        <ContinueButton disabled={!treeTouched} onClick={() => { setDistance(initialDistance); setStep(4) }}>Mettre les trois côte à côte</ContinueButton>
+      </LabShell>
+    )
+  }
 
-  if (step === 1) return (
-    <LabShell visual={<LogisticVisual model={logistic} shot={shot} probability={logisticProbability} />}>
-      <Eyebrow>11.1 · Logistique = relation lisse</Eyebrow>
-      <h1>Elle apprend une tendance globale plutôt qu’une frontière brutale.</h1>
-      <p className="lead">Tous les exemples d’entraînement contribuent à une relation continue entre les features et la probabilité de but.</p>
-      {shotPicker}
-      <div className="model-explanation"><strong>À observer</strong><span>À angle constant, éloigner le tir fait évoluer la probabilité progressivement. Le modèle ne cherche pas un cas précis : il applique la relation globale qu’il a apprise.</span></div>
-      <div className="feedback neutral"><strong>Tir choisi : {Math.round(logisticProbability * 100)}%</strong><span><b>Régression logistique</b> = une relation lisse qui transforme les features en probabilité.</span></div>
-      <ContinueButton onClick={() => setStep(2)}>Comparer avec les voisins</ContinueButton>
-    </LabShell>
-  )
-
-  if (step === 2) return (
-    <LabShell visual={<NeighborVisual neighbors={neighbors} probability={knnProbability} />}>
-      <Eyebrow>11.2 · k-NN = voisins similaires</Eyebrow>
-      <h1>Cette fois, le modèle regarde surtout des tirs qui ressemblent au nouveau.</h1>
-      <p className="lead">Il cherche les <b>k plus proches voisins</b> dans les données passées puis regarde combien ont fini en but.</p>
-      {shotPicker}
-      <div className="bridge-k-picker">{[3, 7, 15].map((value) => <button key={value} className={k === value ? 'selected' : ''} onClick={() => setK(value)}>{value} voisins</button>)}</div>
-      <div className="model-explanation"><strong>Ce que change k</strong><span>Petit k = réponse très locale, sensible à quelques exemples. Grand k = davantage d’exemples, réponse plus lissée.</span></div>
-      <div className="feedback neutral"><strong>{neighbors.filter((item) => item.shot.goal).length}/{neighbors.length} voisin(s) ont marqué → {Math.round(knnProbability * 100)}%</strong><span>k-NN signifie <b>k nearest neighbours</b>.</span></div>
-      <ContinueButton onClick={() => setStep(3)}>Comparer avec l’arbre</ContinueButton>
-    </LabShell>
-  )
-
-  if (step === 3) return (
-    <LabShell visual={<TreeVisual path={path} probability={treeProbability} />}>
-      <Eyebrow>11.3 · Arbre = règles si / alors</Eyebrow>
-      <h1>Le tir descend dans des règles apprises automatiquement.</h1>
-      <p className="lead">L’arbre découpe les exemples avec des questions du type « distance ≤ X ? ». Chaque réponse envoie le tir vers la règle suivante.</p>
-      {shotPicker}
-      <div className="model-explanation"><strong>À observer</strong><span>Une profondeur plus grande autorise davantage de questions. Cela rend le modèle plus flexible, mais peut aussi le pousser à mémoriser des détails.</span></div>
-      <div className="feedback neutral"><strong>Groupe final : {Math.round(treeProbability * 100)}%</strong><span><b>Arbre de décision</b> = une succession de règles si/alors apprises à partir des données.</span></div>
-      <ContinueButton onClick={() => setStep(4)}>Comprendre les scores</ContinueButton>
-    </LabShell>
-  )
-
-  if (step === 4) return (
-    <LabShell visual={<MetricVisual metrics={metrics} correct={correct} actualGoals={actualGoals} alerts={alerts} />}>
-      <Eyebrow>11.4 · Mesurer sans jargon</Eyebrow>
-      <h1>« Bon modèle » peut vouloir dire plusieurs choses.</h1>
-      <p className="lead">On garde maintenant le même modèle. Tu modifies seulement le seuil à partir duquel on déclenche l’alerte « but probable ».</p>
-      <div className="threshold-plain-language"><label><span>Déclencher l’alerte à partir de…</span><strong>{Math.round(threshold * 100)}%</strong></label><input type="range" min="0.05" max="0.6" step="0.05" value={threshold} onChange={(event) => setThreshold(Number(event.target.value))} /></div>
-      <div className="model-explanation"><strong>Essaie 10%, 25%, 50%</strong><span>Baisser le seuil retrouve généralement plus de buts mais crée plus de fausses alertes. Voilà pourquoi un seul score ne suffit pas.</span></div>
-      <div className="bridge-summary">
-        <div><span>Accuracy</span><strong>Décisions justes</strong><small>Parmi tous les tirs, combien ont été classés correctement.</small></div>
-        <div><span>Recall</span><strong>Buts retrouvés</strong><small>Parmi les vrais buts, combien ont déclenché l’alerte.</small></div>
-        <div><span>Precision</span><strong>Alertes correctes</strong><small>Parmi les alertes, combien étaient réellement des buts.</small></div>
-      </div>
-      <ContinueButton onClick={() => setStep(5)}>Comprendre les probabilités</ContinueButton>
-    </LabShell>
-  )
-
-  if (step === 5) return (
-    <LabShell visual={<CalibrationVisual buckets={buckets} selected={bucketIndex} onSelect={setBucketIndex} />}>
-      <Eyebrow>11.5 · Le graphique 0–20%, 20–40%…</Eyebrow>
-      <h1>Chaque tranche contient des tirs auxquels le modèle avait donné des probabilités proches.</h1>
-      <p className="lead"><b>0–20%</b> signifie : « tous les tirs auxquels le modèle avait donné entre 0% et 20% de chances de but ».</p>
-      <div className="bucket-picker">{buckets.map((item, index) => <button key={index} className={bucketIndex === index ? 'selected' : ''} onClick={() => setBucketIndex(index)}><strong>{Math.round(item.from * 100)}–{Math.round(item.to * 100)}%</strong><small>{item.count} tirs</small></button>)}</div>
-      <div className="bucket-detail"><span>Tranche sélectionnée</span><strong>{bucket.count} tirs · annoncé {Math.round(bucket.predicted * 100)}% en moyenne · observé {Math.round(bucket.observed * 100)}% ({Math.round(bucket.observed * bucket.count)} buts).</strong><p>Si annoncé ≈ observé, cette tranche est bien calibrée. Sinon, les probabilités sont trop optimistes ou trop pessimistes.</p></div>
-      <div className="model-explanation"><strong>Brier, enfin</strong><span>Le Brier résume l’erreur de toutes les probabilités. <b>0 serait parfait ; plus bas est meilleur.</b> Une prédiction très sûre et fausse coûte davantage.</span></div>
-      <UnderTheHood><p>Formule : moyenne de <code>(probabilité − résultat)^2</code>, avec résultat = 1 pour un but et 0 sinon. Inutile de la mémoriser pour savoir lire le score.</p></UnderTheHood>
-      <ContinueButton onClick={() => setStep(6)}>Faire le point</ContinueButton>
-    </LabShell>
-  )
+  if (step === 4) {
+    return (
+      <LabShell visual={<ComparisonVisual smooth={smoothProbability} neighbors={neighborProbability} tree={treeProbability} />}>
+        <Eyebrow>11.4 · Même tir, trois raisonnements</Eyebrow>
+        <h1>Maintenant les trois noms devraient correspondre à quelque chose de concret.</h1>
+        <p className="lead">Déplace le même tir. Les trois méthodes reçoivent exactement la même information — la distance — mais elles n’utilisent pas le passé de la même façon.</p>
+        <label className="concrete-slider">
+          <span>Distance du tir</span>
+          <strong>{distance.toFixed(0)} m</strong>
+          <input type="range" min="5" max="30" step="1" value={distance} onChange={(event) => { setDistance(Number(event.target.value)); setCompareTouched(true) }} />
+        </label>
+        <div className="three-method-recap">
+          <div><span>Régression logistique</span><strong>{Math.round(smoothProbability * 100)}%</strong><small>« Je consulte la tendance générale apprise sur tous les tirs. »</small></div>
+          <div><span>k-NN · {k} voisins</span><strong>{Math.round(neighborProbability * 100)}%</strong><small>« Je regarde ce qui est arrivé aux tirs les plus ressemblants. »</small></div>
+          <div><span>Arbre de décision</span><strong>{Math.round(treeProbability * 100)}%</strong><small>« Je fais passer le tir dans mes règles si/alors. »</small></div>
+        </div>
+        <div className="plain-explanation"><strong>Point essentiel</strong><span>Un « modèle » n’est donc pas une formule magique unique. C’est une <b>façon d’utiliser des exemples passés pour fabriquer une prédiction</b>. Des familles différentes utilisent ces exemples différemment.</span></div>
+        <ContinueButton disabled={!compareTouched} onClick={() => setStep(5)}>Faire le point</ContinueButton>
+      </LabShell>
+    )
+  }
 
   return (
-    <LabShell visual={<ModelOverview active />}>
-      <Eyebrow>Chapitre 11 · Pont terminé</Eyebrow>
-      <h1>Les prochains boutons ont maintenant un sens.</h1>
-      <div className="bridge-summary">
-        <div><span>Logistique</span><strong>Relation lisse</strong><small>Apprend une tendance globale.</small></div>
-        <div><span>k-NN</span><strong>Voisins similaires</strong><small>Regarde k exemples proches.</small></div>
-        <div><span>Arbre</span><strong>Règles si/alors</strong><small>Suit des coupures apprises.</small></div>
+    <LabShell visual={<ThreeWaysIntro named />}>
+      <Eyebrow>Chapitre 11 · Checkpoint</Eyebrow>
+      <h1>On s’arrête volontairement ici sur la technique.</h1>
+      <p className="lead">Si tu peux expliquer les trois phrases ci-dessous sans regarder leur nom, alors le pont est enfin au bon endroit.</p>
+      <div className="three-method-recap text-only">
+        <div><strong>Tendance générale</strong><small>Apprendre une relation globale et lisse à partir de tous les exemples.</small></div>
+        <div><strong>Cas ressemblants</strong><small>Regarder ce qui est arrivé à quelques exemples proches du nouveau cas.</small></div>
+        <div><strong>Questions successives</strong><small>Découper les exemples avec une suite de règles si/alors.</small></div>
       </div>
-      <div className="checkpoint"><span>Pour mesurer</span><strong>Décisions justes · buts retrouvés · alertes correctes · erreur des probabilités.</strong></div>
-      <ContinueButton onClick={onComplete}>Passer à la validation répétée</ContinueButton>
+      <div className="checkpoint"><span>À ne pas apprendre par cœur</span><strong>Les mots « logistique », « k-NN » et « arbre » sont juste les noms de ces trois mécanismes. Le mécanisme compte avant le vocabulaire.</strong></div>
+      <p className="microcopy">Je ne réintroduis volontairement ni accuracy, ni Brier, ni cross-validation dans ce chapitre. On validera d’abord que ces trois modèles sont vraiment clairs.</p>
+      <ContinueButton onClick={onComplete}>Terminer le chapitre</ContinueButton>
     </LabShell>
   )
 }
 
-function ModelOverview({ active = false }: { active?: boolean }) {
-  return <div className="model-primer-board">{[
-    ['Logistique', 'Une relation lisse', 'Tous les exemples contribuent à une tendance globale.'],
-    ['k-NN', 'Des voisins', 'La prédiction vient des exemples passés les plus ressemblants.'],
-    ['Arbre', 'Des règles', 'Le tir suit des questions si/alors apprises.'],
-  ].map(([name, title, copy]) => <div key={name} className={`model-primer-card ${active ? 'active' : ''}`}><span>{name}</span><strong>{title}</strong><small>{copy}</small></div>)}</div>
+function ThreeWaysIntro({ named = false }: { named?: boolean }) {
+  const methods = [
+    ['A', 'Apprendre une tendance', named ? 'Régression logistique' : 'Nom plus tard'],
+    ['B', 'Chercher des cas ressemblants', named ? 'k-NN' : 'Nom plus tard'],
+    ['C', 'Poser des questions successives', named ? 'Arbre de décision' : 'Nom plus tard'],
+  ]
+  return <div className="three-ways-board">{methods.map(([letter, title, name]) => <div key={letter}><span>Méthode {letter}</span><strong>{title}</strong><small>{name}</small></div>)}</div>
 }
 
-function LogisticVisual({ model, shot, probability }: { model: ReturnType<typeof trainLogistic>; shot: Shot; probability: number }) {
-  const rows = [6, 10, 14, 20, 28].map((distance) => ({ distance, probability: predictProbability(model, [distance, shot.angle]) }))
-  return <div className="smooth-probability-list"><div className="model-primer-card active"><span>Logistique</span><strong>Tir choisi · {Math.round(probability * 100)}%</strong><small>Même angle, distance modifiée :</small></div>{rows.map((row) => <div className="smooth-probability-row" key={row.distance}><span>{row.distance} m</span><i style={{ width: `${Math.max(2, row.probability * 100)}%` }} /><strong>{Math.round(row.probability * 100)}%</strong></div>)}</div>
+function TrendVisual({ model, distance }: { model: ReturnType<typeof trainLogistic>; distance: number }) {
+  const points = [6, 10, 14, 20, 28].map((value) => ({ value, probability: predictProbability(model, [value]) }))
+  return <div className="trend-concrete-board"><span>Une seule courbe apprise sur tous les tirs</span>{points.map((point) => <div key={point.value} className={Math.round(distance) === point.value ? 'active' : ''}><strong>{point.value} m</strong><i style={{ width: `${Math.max(3, point.probability * 100)}%` }} /><b>{Math.round(point.probability * 100)}%</b></div>)}</div>
 }
 
-function NeighborVisual({ neighbors, probability }: { neighbors: Neighbor[]; probability: number }) {
-  return <div className="neighbor-list"><div className="model-primer-card active"><span>k-NN</span><strong>{Math.round(probability * 100)}%</strong><small>Part de buts chez les voisins ci-dessous.</small></div>{neighbors.map((item, index) => <div key={item.shot.id} className={`neighbor-row ${item.shot.goal ? 'goal' : ''}`}><span>Voisin {index + 1}</span><strong>{item.shot.distance.toFixed(1)}m · {item.shot.angle.toFixed(0)}°</strong><b>{item.shot.goal ? '⚽' : '×'}</b></div>)}</div>
+function NeighborsVisual({ neighbors, goals }: { neighbors: Neighbor[]; goals: number }) {
+  return <div className="neighbors-concrete-board"><span>Les tirs passés les plus proches en distance</span>{neighbors.map((neighbor, index) => <div key={neighbor.shot.id}><small>#{index + 1}</small><strong>{neighbor.shot.distance.toFixed(1)} m</strong><em>écart {neighbor.gap.toFixed(1)} m</em><b>{neighbor.shot.goal ? '⚽ BUT' : '× raté'}</b></div>)}<p>{goals} but(s) / {neighbors.length} voisins</p></div>
 }
 
-function TreeVisual({ path, probability }: { path: TreeTrace[]; probability: number }) {
-  return <div className="tree-path-list"><div className="model-primer-card active"><span>Arbre</span><strong>Chemin du tir</strong><small>Chaque réponse choisit la branche suivante.</small></div>{path.map((item, index) => <div className="tree-path-row" key={index}><span>Question {index + 1}</span><strong>{item.label}</strong><b>{item.answer}</b></div>)}<div className="tree-path-row"><span>Groupe final</span><strong>Probabilité du groupe</strong><b>{Math.round(probability * 100)}%</b></div></div>
+function RulesVisual({ trace, probability }: { trace: TreeTrace[]; probability: number }) {
+  return <div className="rules-concrete-board"><span>Chemin suivi par le tir</span>{trace.map((item, index) => <div key={`${item.question}-${index}`}><small>Question {index + 1}</small><strong>{item.question}</strong><b>{item.answer.toUpperCase()}</b></div>)}<p>Groupe final → {Math.round(probability * 100)}% de buts observés</p></div>
 }
 
-function MetricVisual({ metrics, correct, actualGoals, alerts }: { metrics: ReturnType<typeof evaluateConfig>; correct: number; actualGoals: number; alerts: number }) {
-  return <div className="metric-primer-board">
-    <div className="metric-explainer-card"><span>Décisions justes · accuracy</span><strong>{correct}/{metrics.labels.length}</strong><small>{Math.round(metrics.accuracy * 100)}% des tirs classés correctement.</small></div>
-    <div className="metric-explainer-card"><span>Buts retrouvés · recall</span><strong>{metrics.truePositive}/{actualGoals}</strong><small>{Math.round(metrics.recall * 100)}% des vrais buts détectés.</small></div>
-    <div className="metric-explainer-card"><span>Alertes correctes · precision</span><strong>{metrics.truePositive}/{alerts}</strong><small>{alerts ? `${Math.round(metrics.precision * 100)}% des alertes étaient justes.` : 'Aucune alerte.'}</small></div>
-    <div className="metric-explainer-card"><span>Fausses alertes</span><strong>{metrics.falsePositive}</strong><small>Tirs signalés comme « but probable » qui n’ont pas marqué.</small></div>
-  </div>
+function ComparisonVisual({ smooth, neighbors, tree }: { smooth: number; neighbors: number; tree: number }) {
+  return <div className="comparison-concrete-board">{[
+    ['Tendance', smooth],
+    ['Voisins', neighbors],
+    ['Règles', tree],
+  ].map(([label, probability]) => <div key={String(label)}><span>{String(label)}</span><strong>{Math.round(Number(probability) * 100)}%</strong><i style={{ width: `${Math.max(3, Number(probability) * 100)}%` }} /></div>)}</div>
 }
 
-function CalibrationVisual({ buckets, selected, onSelect }: { buckets: ReturnType<typeof calibrationBuckets>; selected: number; onSelect: (index: number) => void }) {
-  const bucket = buckets[selected] ?? buckets[0]
-  return <div className="bucket-explainer"><div className="model-primer-card active"><span>Calibration</span><strong>Groupes de probabilités</strong><small>Clique une tranche.</small></div><div className="bucket-picker">{buckets.map((item, index) => <button key={index} className={selected === index ? 'selected' : ''} onClick={() => onSelect(index)}><strong>{Math.round(item.from * 100)}–{Math.round(item.to * 100)}%</strong><small>{item.count} tirs</small></button>)}</div><div className="bucket-detail"><span>Ce groupe</span><strong>annoncé {Math.round(bucket.predicted * 100)}% · observé {Math.round(bucket.observed * 100)}%</strong><p>{bucket.count} tirs.</p></div></div>
+function nearestByDistance(shots: Shot[], distance: number, k: number): Neighbor[] {
+  return shots
+    .map((shot) => ({ shot, gap: Math.abs(shot.distance - distance) }))
+    .sort((a, b) => a.gap - b.gap)
+    .slice(0, k)
 }
 
-function pickSampleShots(shots: Shot[]) {
-  const goals = shots.filter((shot) => shot.goal)
-  const misses = shots.filter((shot) => !shot.goal)
-  return [goals[0], misses[0], goals[1], misses[Math.floor(misses.length / 2)]].filter((shot): shot is Shot => Boolean(shot))
-}
-
-function nearestNeighbors(train: Shot[], target: Shot, k: number): Neighbor[] {
-  const rows = realShotRows(train, features)
-  const targetRow = realShotRow(target, features)
-  const means = features.map((_, index) => rows.reduce((sum, row) => sum + row[index], 0) / rows.length)
-  const scales = features.map((_, index) => Math.sqrt(rows.reduce((sum, row) => sum + (row[index] - means[index]) ** 2, 0) / rows.length) || 1)
-  return train.map((shot, index) => ({
-    shot,
-    distance: Math.sqrt(rows[index].reduce((sum, value, featureIndex) => sum + (((value - means[featureIndex]) / scales[featureIndex]) - ((targetRow[featureIndex] - means[featureIndex]) / scales[featureIndex])) ** 2, 0)),
-  })).sort((a, b) => a.distance - b.distance).slice(0, k)
-}
-
-function traceTree(root: TreeNode, row: number[]): TreeTrace[] {
+function traceTree(root: TreeNode, distance: number): TreeTrace[] {
   const trace: TreeTrace[] = []
   let node = root
-  while (node.featureIndex !== undefined && node.threshold !== undefined && node.left && node.right) {
-    const left = row[node.featureIndex] <= node.threshold
-    trace.push({ label: `${featureNames[node.featureIndex]} ≤ ${node.threshold.toFixed(1)} ?`, answer: left ? 'oui' : 'non' })
-    node = left ? node.left : node.right
+  while (node.threshold !== undefined && node.left && node.right) {
+    const goesLeft = distance <= node.threshold
+    trace.push({ question: `Distance ≤ ${node.threshold.toFixed(1)} m ?`, answer: goesLeft ? 'oui' : 'non' })
+    node = goesLeft ? node.left : node.right
   }
   return trace
 }
 
-function leafProbability(root: TreeNode, row: number[]) {
+function leafProbability(root: TreeNode, distance: number) {
   let node = root
-  while (node.featureIndex !== undefined && node.threshold !== undefined && node.left && node.right) node = row[node.featureIndex] <= node.threshold ? node.left : node.right
+  while (node.threshold !== undefined && node.left && node.right) node = distance <= node.threshold ? node.left : node.right
   return node.probability
 }
