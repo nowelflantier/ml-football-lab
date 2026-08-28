@@ -6,8 +6,6 @@ import { stratifiedSplit } from '../ml/evaluation'
 import { evaluateConfig } from '../ml/modelLab'
 import { calibrationBuckets } from '../ml/validation'
 
-const fixedConfig = { family: 'logistic' as const, features: ['distance', 'angle'] as const }
-
 type Props = { step: number; setStep: (step: number) => void; onComplete: () => void }
 
 export function Chapter11({ step, setStep, onComplete }: Props) {
