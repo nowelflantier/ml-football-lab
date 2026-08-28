@@ -2,82 +2,101 @@
 
 ## Status
 
-Cycle 1 is implemented on `main` with Vite + React + TypeScript. A practice-first revision of Chapters 04–07 is currently in PR #3 after the first live playtest found the conceptual sequence clear but too demonstration-heavy.
+The learning path now runs through Chapter 16 on branch `codex/cycles-2-3-workshop`.
 
-### Stable foundation
+Main currently contains Chapters 01–10. The new branch finishes Cycle 2 and adds a full Cycle 3 Model Workshop.
 
-- Chapter 01: observe shots, predict outcomes, build a manual distance threshold, see errors.
-- Chapter 02: browser-side logistic model using distance, probability curve, human/model comparison.
-- Chapter 03: same-distance/different-angle reveal, distance vs distance+angle, feature-selection exercise.
-- Chapter navigation and locking through 7 chapters.
-- V0 progress migration preserved from `ml-football-lab-progress-v0` to V1 storage.
-- Responsive layout.
+## Implemented learning staircase
 
-### Practice-first revision in PR #3
+### Cycle 1 — 01–07
 
-- Chapter 04: learner chooses the test ratio and must run at least three real retraining/evaluation experiments; score variation is experienced rather than merely explained.
-- Chapter 05: learner estimates four shot probabilities with sliders before model probabilities are revealed, then derives total xG.
-- Chapter 06: learner searches k values to create a perfect train score, then discovers overfitting on test; learner also builds feature sets until a post-shot leakage feature creates the suspicious score jump.
-- Chapter 07: mini-lab with model family, feature selection, k, decision threshold, explicit train/test runs, run history and live false-positive / false-negative inspection.
-- `practice.css` isolates the new interaction styles from the validated base UI.
+- prediction and manual rules;
+- first logistic model;
+- features;
+- train/test;
+- probability / xG intuition;
+- overfitting and leakage;
+- first mini-lab comparing logistic and k-NN.
 
-## Pedagogical rule after first playtest
+### Cycle 2 — 08–12
 
-The learning loop is now:
+- 08: baseline, class imbalance, error types and threshold tradeoffs on real StatsBomb data;
+- 09: exact raw StatsBomb excerpt → model-ready row, provenance and derived features;
+- 10: feature engineering and one-feature-at-a-time ablation;
+- 11: learner-configurable calibration lab with reliability buckets and Brier score;
+- 12: learner-configurable cross-validation with 3/5/7 folds and score variability.
 
-**question → learner prediction → manipulation → result → second attempt → explanation → vocabulary → optional technical reveal**
+### Cycle 3 — 13–16
 
-From Chapter 04 onward, a technical concept should normally be something the learner has just manipulated, not something shown in a static explanation.
+- 13: real browser-side decision tree with editable depth / minimum samples / feature set;
+- 14: explicit train / validation / test tuning workflow;
+- 15: open Model Workshop with logistic / k-NN / tree, features, hyperparameters, threshold, folds, run history and direction signals relative to a fixed baseline;
+- 16: final xG baseline challenge with three entire matches held out from development, candidate freeze, final reveal and comparison to both the simple baseline and StatsBomb xG reference.
 
-## Runtime ML boundary
+## Pedagogical mode
 
-The current educational experiments intentionally run directly in the browser:
+The original concept-first sequence remains useful for Chapters 01–10, but the user playtests showed that QCM-style interactions were not enough.
 
-- logistic regression implemented in TypeScript;
-- deterministic train/test splitting;
-- k-nearest-neighbours implemented in TypeScript;
-- confusion matrix / threshold evaluation;
-- evaluation recalculated on interaction.
+From Chapter 11 onward the dominant loop is now:
 
-This is sufficient for educational datasets in the hundreds or low thousands of observations. A Python/backend path should only be introduced when data volume, model complexity or reproducibility requirements justify it.
+**question → configure → run → inspect result → change one thing → rerun → compare history → keep/reject → explain**
 
-## Build status
+There should be no hidden correct configuration in the Model Workshop. Direction signals are always relative to an explicit baseline and can report mixed tradeoffs.
 
-A malformed `tsconfig.node.json` originally blocked Vercel with `TS1005: '}' expected`.
+## Runtime ML
 
-Fixed on `main` in commit `d5e6161`. A full Linux/Node 24 build then passed with real dependencies.
+All current experiments execute in the browser on 297 sourced StatsBomb shots:
 
-Permanent CI is now merged on `main` and runs the real app build plus Python syntax checks on PRs.
+- logistic regression;
+- k-nearest-neighbours;
+- decision tree;
+- threshold metrics / confusion matrix;
+- Brier score;
+- calibration buckets;
+- stratified cross-validation;
+- train / validation / test splitting;
+- match-level holdout.
+
+Python remains an offline data-preparation layer only.
 
 ## Data
 
-The current app still uses pedagogical seed fixtures in `src/data/shots.ts`.
-
-Cycle 2 has a prepared real-data source:
+Real-data source:
 - StatsBomb Open Data;
-- 1. Bundesliga;
-- season 2023/2024;
+- 1. Bundesliga 2023/24;
 - `competition_id = 9`;
-- `season_id = 281`.
+- `season_id = 281`;
+- 297 shots embedded from 10 matches.
 
-A reproducible offline downloader reads the upstream match index, and `prepare-shots.py` preserves richer prediction-time fields plus provenance.
+The generated dataset preserves selected exact upstream fields for the raw-data lesson and a reference StatsBomb xG value.
 
-Real-data smoke test completed successfully on match `3895292`:
-- 29 shots extracted;
-- 1 goal;
-- geometry, body part, shot type, pressure/context and StatsBomb xG reference parsed.
+`statsbomb_xg_reference` must never be used as a feature for our own xG model. It is only revealed as an external benchmark after the final holdout.
 
-`statsbomb_xg_reference` is reference-only and must never be used as a training feature for our own xG model.
+## Build / CI
 
-## Cycle 2 shaping
+Permanent CI on `main` runs:
+- real dependency installation;
+- `npm run build` (`tsc -b && vite build`);
+- Python syntax checks.
 
-Detailed plan lives in `docs/cycle-2.md`.
+The next gate for this branch is CI + Vercel preview on Chapters 11–16 before merge.
 
-Planned staircase:
-- 08: baseline, class imbalance, confusion matrix, false-positive / false-negative intuition;
-- 09: reveal real StatsBomb raw data and preprocessing;
-- 10: richer feature engineering and ablation;
-- 11: probability calibration;
-- 12: cross-validation and evaluation stability.
+## Next pedagogical gate
 
-Do not implement 08–12 until the practice-first Chapters 04–07 are playtested. The next gate is now whether the learner feels they are genuinely running experiments rather than watching demonstrations.
+Playtest Chapters 11–16 without restarting earlier chapters.
+
+Questions to answer:
+- Does Chapter 11 finally feel like experimentation rather than a quiz?
+- Is cross-validation understandable when manipulated repeatedly?
+- Does tree depth make model complexity tangible?
+- Does validation-vs-test tuning feel practically useful?
+- Does the Chapter 15 workbench provide enough feedback to form a direction without dictating a solution?
+- Does the Chapter 16 holdout feel like a meaningful mini-project?
+
+## After Cycle 3
+
+Do not automatically add another tutorial cycle. The likely next direction is a less guided Cycle 4:
+- error analysis;
+- model interpretation;
+- full-match xG output;
+- open football questions and analysis tasks.

@@ -3,128 +3,105 @@
 ## Cycle 1 — From intuition to evaluation
 
 ### 01 — Predict
-Experience:
-- inspect a small set of shots;
-- predict unseen outcomes;
-- create a manual distance-threshold rule;
-- observe correct and incorrect predictions.
-
-Concepts unlocked:
-- observation;
-- variable;
-- target;
-- prediction;
-- error.
+- manual distance rule;
+- prediction and error.
 
 ### 02 — Learn
-Experience:
-- reuse the same distance problem;
-- train a tiny logistic model in the browser;
-- see a probability curve;
-- compare the manual rule with the learned relation.
-
-Concept unlocked:
-- model;
-- minimal intuition for machine learning.
+- first browser-side logistic model;
+- human rule vs learned relationship.
 
 ### 03 — Describe
-Experience:
-- compare two shots at the same distance but different angles;
 - add angle;
-- select information that directly describes shot geometry.
-
-Concept unlocked:
-- feature.
+- feature intuition.
 
 ### 04 — Test
-Experience:
-- first see an attractive score on familiar examples;
-- reserve unseen shots;
-- compare train and test scores;
-- repeatedly reshuffle a deterministic stratified split and retrain in-browser.
-
-Concepts unlocked:
-- train/test split;
-- generalisation;
-- evaluation variance on a small dataset.
+- train/test;
+- repeated reshuffles;
+- generalisation.
 
 ### 05 — Probabilise
-Experience:
-- see a low-probability shot become a goal;
-- reason about probabilities as frequencies rather than promises;
-- sum shot probabilities;
-- connect the same mechanism to expected goals.
-
-Concepts unlocked:
-- probabilistic prediction;
-- calibration intuition without claiming the seed model is calibrated;
-- xG as per-shot goal probability and sum of shot probabilities.
+- probability as frequency;
+- xG intuition.
 
 ### 06 — Distrust perfect scores
-Experience:
-- compare a smooth logistic model with 1-nearest-neighbour;
-- see 100% train accuracy fail to dominate on test;
-- inspect an intentionally leaked post-shot feature.
-
-Concepts unlocked:
 - overfitting;
-- data leakage;
-- prediction-time feature availability.
+- leakage.
 
 ### 07 — Compare
-Experience:
-- compare logistic regression and k-nearest-neighbours on the same train/test problem;
-- inspect per-shot probability differences;
-- change k live and immediately reevaluate on the test set.
+- logistic vs k-NN;
+- first mini-lab;
+- hyperparameter intuition.
 
-Concepts unlocked:
-- model family;
-- hyperparameter;
-- model comparison as behaviour + unseen-data evaluation, not train score.
+## Cycle 2 — Make the experiment credible
 
-## Cycle 2 — From a model that runs to an experiment you can trust
+Detailed shaping lives in `docs/cycle-2.md`.
 
-Detailed shaping lives in `docs/cycle-2.md`. The intended staircase is:
-
-### 08 — 90% correct. Is that actually good?
+### 08 — Measure
 - class imbalance;
 - naive baseline;
-- confusion matrix;
-- false positives / false negatives;
-- precision and recall only after the error types are intuitive.
+- error types and confusion matrix.
 
-### 09 — Where did our data actually come from?
-- move from pedagogical seed to sourced StatsBomb Open Data;
-- raw event vs model-ready row;
-- provenance;
-- preprocessing, derived features and missing values.
+### 09 — Prepare
+- real StatsBomb source data;
+- raw event → model-ready row;
+- provenance and preprocessing.
 
-### 10 — Which information deserves to become a feature?
-- richer prediction-time football features;
-- categorical encoding intuition;
-- one-feature-at-a-time comparisons;
-- ablation and unseen-data evaluation.
+### 10 — Enrich
+- feature engineering;
+- categorical encoding;
+- ablation on unseen data.
 
-### 11 — If the model says 30%, does 30% really happen?
-- calibration;
-- reliability diagram;
-- probability quality vs classification quality;
-- Brier score only as optional technical depth.
+### 11 — Calibrate
+- learner-configurable probability experiments;
+- reliability buckets;
+- Brier score;
+- probability quality vs classification quality.
 
-### 12 — One train/test split was lucky. Now what?
-- repeated validation;
+### 12 — Validate
+- learner-configurable cross-validation;
 - folds;
-- cross-validation;
 - mean performance and variability;
-- fair model comparison using the same evaluation protocol.
+- fair comparison under a shared protocol.
 
-## Later cycles
+## Cycle 3 — Model Workshop
 
-Only after Cycle 2 is understood should the curriculum widen toward:
-- decision trees;
-- random forests / gradient boosting;
-- feature importance and richer model interpretation;
-- clustering;
-- player similarity;
-- dimensionality reduction;
-- richer event sequences or tracking data.
+Cycle 3 changes the learning mode: fewer reveal screens, more configuration → run → compare → keep/reject loops.
+
+### 13 — Build a decision tree
+- train a real browser-side decision tree;
+- manipulate depth and minimum branch size;
+- inspect train vs test behaviour and the first learned rule;
+- experience model capacity directly.
+
+### 14 — Tune without consuming the final test
+- explicit train / validation / test split;
+- tune k-NN or tree hyperparameters on validation;
+- choose a candidate before revealing test;
+- retrain on train + validation, then evaluate once on test.
+
+### 15 — Open Model Workshop
+- free choice of features;
+- logistic / k-NN / tree;
+- k, tree depth, threshold and fold count;
+- persistent experiment history inside the chapter;
+- direction signal relative to a fixed distance+angle baseline;
+- select and defend a candidate rather than answer a quiz.
+
+### 16 — Holdout challenge
+- reserve three complete StatsBomb matches outside development;
+- iterate only on the remaining matches using cross-validation;
+- learner decides when to freeze a candidate;
+- reveal holdout only after the decision;
+- compare learner model, simple baseline and StatsBomb xG reference on the same untouched matches.
+
+## Cycle 4 — Leave the tutorial
+
+The next cycle should not simply add more guided chapters. Candidate direction:
+
+- error analysis on confident mistakes and football slices;
+- model interpretation / feature effects;
+- build an xG map for a complete real match;
+- compare goals vs model xG at player or team level when enough data is available;
+- eventually widen to trees/ensembles, richer events, clustering, player similarity or tracking data.
+
+Gate before implementation: playtest Chapters 11–16 and decide which tasks the learner can now perform without being prompted step-by-step.

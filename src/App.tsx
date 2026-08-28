@@ -9,11 +9,17 @@ import { Chapter7 } from './chapters/Chapter7'
 import { Chapter8 } from './chapters/Chapter8'
 import { Chapter9 } from './chapters/Chapter9'
 import { Chapter10 } from './chapters/Chapter10'
+import { Chapter11 } from './chapters/Chapter11'
+import { Chapter12 } from './chapters/Chapter12'
+import { Chapter13 } from './chapters/Chapter13'
+import { Chapter14 } from './chapters/Chapter14'
+import { Chapter15 } from './chapters/Chapter15'
+import { Chapter16 } from './chapters/Chapter16'
 import type { ChapterId, Progress } from './types'
 
 const STORAGE_KEY = 'ml-football-lab-progress-v1'
 const LEGACY_STORAGE_KEY = 'ml-football-lab-progress-v0'
-const CHAPTER_COUNT = 10
+const CHAPTER_COUNT = 16
 
 const defaultProgress: Progress = {
   chapter: 1,
@@ -27,6 +33,12 @@ const defaultProgress: Progress = {
   chapter8Step: 0,
   chapter9Step: 0,
   chapter10Step: 0,
+  chapter11Step: 0,
+  chapter12Step: 0,
+  chapter13Step: 0,
+  chapter14Step: 0,
+  chapter15Step: 0,
+  chapter16Step: 0,
   manualThreshold: 11,
   completed: [],
 }
@@ -52,6 +64,12 @@ const chapterMeta = [
   { id: 8, short: '08', title: 'Mesurer', subtitle: 'Baseline & erreurs' },
   { id: 9, short: '09', title: 'Préparer', subtitle: 'Vraies données source' },
   { id: 10, short: '10', title: 'Enrichir', subtitle: 'Feature engineering' },
+  { id: 11, short: '11', title: 'Calibrer', subtitle: 'Probabilités crédibles' },
+  { id: 12, short: '12', title: 'Valider', subtitle: 'Cross-validation' },
+  { id: 13, short: '13', title: 'Arborer', subtitle: 'Decision tree' },
+  { id: 14, short: '14', title: 'Régler', subtitle: 'Validation & tuning' },
+  { id: 15, short: '15', title: 'Construire', subtitle: 'Model Workshop' },
+  { id: 16, short: '16', title: 'Éprouver', subtitle: 'Holdout final' },
 ] as const
 
 export default function App() {
@@ -81,6 +99,12 @@ export default function App() {
       case 8: return { chapter8Step: 0 }
       case 9: return { chapter9Step: 0 }
       case 10: return { chapter10Step: 0 }
+      case 11: return { chapter11Step: 0 }
+      case 12: return { chapter12Step: 0 }
+      case 13: return { chapter13Step: 0 }
+      case 14: return { chapter14Step: 0 }
+      case 15: return { chapter15Step: 0 }
+      case 16: return { chapter16Step: 0 }
     }
   }
 
@@ -135,101 +159,59 @@ export default function App() {
         <aside className="chapter-nav">
           <div className="nav-heading">Cycle 1 · Du problème au modèle</div>
           {chapterMeta.slice(0, 7).map(renderChapterLink)}
-          <div className="nav-heading cycle-two-heading">Cycle 2 · Du modèle aux vraies données</div>
-          {chapterMeta.slice(7).map(renderChapterLink)}
+          <div className="nav-heading cycle-two-heading">Cycle 2 · Rendre l’expérience crédible</div>
+          {chapterMeta.slice(7, 12).map(renderChapterLink)}
+          <div className="nav-heading cycle-two-heading">Cycle 3 · Model Workshop</div>
+          {chapterMeta.slice(12).map(renderChapterLink)}
           <div className="nav-footer">
             <span className="status-dot" />
-            <span>Modèles exécutés dans le navigateur<br />StatsBomb réel à partir du chapitre 08</span>
+            <span>Modèles exécutés dans le navigateur<br />StatsBomb réel · 297 tirs</span>
           </div>
         </aside>
 
         <main className="main-stage">
-          {finished ? (
-            <Completion onReview={() => openChapter(10)} />
-          ) : progress.chapter === 1 ? (
-            <Chapter1
-              step={progress.chapter1Step}
-              setStep={(chapter1Step) => update({ chapter1Step })}
-              manualThreshold={progress.manualThreshold}
-              setManualThreshold={(manualThreshold) => update({ manualThreshold })}
-              onComplete={() => completeChapter(1)}
-            />
-          ) : progress.chapter === 2 ? (
-            <Chapter2
-              step={progress.chapter2Step}
-              setStep={(chapter2Step) => update({ chapter2Step })}
-              manualThreshold={progress.manualThreshold}
-              onComplete={() => completeChapter(2)}
-            />
-          ) : progress.chapter === 3 ? (
-            <Chapter3
-              step={progress.chapter3Step}
-              setStep={(chapter3Step) => update({ chapter3Step })}
-              onComplete={() => completeChapter(3)}
-            />
-          ) : progress.chapter === 4 ? (
-            <Chapter4
-              step={progress.chapter4Step}
-              setStep={(chapter4Step) => update({ chapter4Step })}
-              onComplete={() => completeChapter(4)}
-            />
-          ) : progress.chapter === 5 ? (
-            <Chapter5
-              step={progress.chapter5Step}
-              setStep={(chapter5Step) => update({ chapter5Step })}
-              onComplete={() => completeChapter(5)}
-            />
-          ) : progress.chapter === 6 ? (
-            <Chapter6
-              step={progress.chapter6Step}
-              setStep={(chapter6Step) => update({ chapter6Step })}
-              onComplete={() => completeChapter(6)}
-            />
-          ) : progress.chapter === 7 ? (
-            <Chapter7
-              step={progress.chapter7Step}
-              setStep={(chapter7Step) => update({ chapter7Step })}
-              onComplete={() => completeChapter(7)}
-            />
-          ) : progress.chapter === 8 ? (
-            <Chapter8
-              step={progress.chapter8Step}
-              setStep={(chapter8Step) => update({ chapter8Step })}
-              onComplete={() => completeChapter(8)}
-            />
-          ) : progress.chapter === 9 ? (
-            <Chapter9
-              step={progress.chapter9Step}
-              setStep={(chapter9Step) => update({ chapter9Step })}
-              onComplete={() => completeChapter(9)}
-            />
-          ) : (
-            <Chapter10
-              step={progress.chapter10Step}
-              setStep={(chapter10Step) => update({ chapter10Step })}
-              onComplete={() => completeChapter(10)}
-            />
-          )}
+          {finished ? <Completion onReview={() => openChapter(16)} /> : <ChapterRouter progress={progress} update={update} completeChapter={completeChapter} />}
         </main>
       </div>
     </div>
   )
 }
 
+function ChapterRouter({ progress, update, completeChapter }: { progress: Progress; update: (patch: Partial<Progress>) => void; completeChapter: (chapter: ChapterId) => void }) {
+  switch (progress.chapter) {
+    case 1: return <Chapter1 step={progress.chapter1Step} setStep={(chapter1Step) => update({ chapter1Step })} manualThreshold={progress.manualThreshold} setManualThreshold={(manualThreshold) => update({ manualThreshold })} onComplete={() => completeChapter(1)} />
+    case 2: return <Chapter2 step={progress.chapter2Step} setStep={(chapter2Step) => update({ chapter2Step })} manualThreshold={progress.manualThreshold} onComplete={() => completeChapter(2)} />
+    case 3: return <Chapter3 step={progress.chapter3Step} setStep={(chapter3Step) => update({ chapter3Step })} onComplete={() => completeChapter(3)} />
+    case 4: return <Chapter4 step={progress.chapter4Step} setStep={(chapter4Step) => update({ chapter4Step })} onComplete={() => completeChapter(4)} />
+    case 5: return <Chapter5 step={progress.chapter5Step} setStep={(chapter5Step) => update({ chapter5Step })} onComplete={() => completeChapter(5)} />
+    case 6: return <Chapter6 step={progress.chapter6Step} setStep={(chapter6Step) => update({ chapter6Step })} onComplete={() => completeChapter(6)} />
+    case 7: return <Chapter7 step={progress.chapter7Step} setStep={(chapter7Step) => update({ chapter7Step })} onComplete={() => completeChapter(7)} />
+    case 8: return <Chapter8 step={progress.chapter8Step} setStep={(chapter8Step) => update({ chapter8Step })} onComplete={() => completeChapter(8)} />
+    case 9: return <Chapter9 step={progress.chapter9Step} setStep={(chapter9Step) => update({ chapter9Step })} onComplete={() => completeChapter(9)} />
+    case 10: return <Chapter10 step={progress.chapter10Step} setStep={(chapter10Step) => update({ chapter10Step })} onComplete={() => completeChapter(10)} />
+    case 11: return <Chapter11 step={progress.chapter11Step} setStep={(chapter11Step) => update({ chapter11Step })} onComplete={() => completeChapter(11)} />
+    case 12: return <Chapter12 step={progress.chapter12Step} setStep={(chapter12Step) => update({ chapter12Step })} onComplete={() => completeChapter(12)} />
+    case 13: return <Chapter13 step={progress.chapter13Step} setStep={(chapter13Step) => update({ chapter13Step })} onComplete={() => completeChapter(13)} />
+    case 14: return <Chapter14 step={progress.chapter14Step} setStep={(chapter14Step) => update({ chapter14Step })} onComplete={() => completeChapter(14)} />
+    case 15: return <Chapter15 step={progress.chapter15Step} setStep={(chapter15Step) => update({ chapter15Step })} onComplete={() => completeChapter(15)} />
+    case 16: return <Chapter16 step={progress.chapter16Step} setStep={(chapter16Step) => update({ chapter16Step })} onComplete={() => completeChapter(16)} />
+  }
+}
+
 function Completion({ onReview }: { onReview: () => void }) {
   return (
     <div className="completion-screen">
-      <div className="completion-badge">CHECKPOINT CYCLE 2 · ATTEINT</div>
-      <h1>Tu as quitté le petit modèle de démonstration.</h1>
-      <p>Tu as maintenant utilisé des tirs StatsBomb réels, comparé ton modèle à une baseline, manipulé les types d’erreurs, ouvert la donnée source et testé des features sur des tirs inconnus.</p>
+      <div className="completion-badge">MODEL WORKSHOP · TERMINÉ</div>
+      <h1>Tu as mené une expérience ML complète.</h1>
+      <p>Tu es parti d’un problème de prédiction très simple, puis tu as construit et évalué plusieurs modèles sur de vraies données StatsBomb jusqu’à un holdout par match.</p>
       <div className="completion-grid four-cards">
-        <div><span>01–03</span><strong>Construire le problème.</strong><small>Cible, features, modèle.</small></div>
-        <div><span>04–07</span><strong>Expérimenter.</strong><small>Train/test, probabilité, overfitting, comparaison.</small></div>
-        <div><span>08–09</span><strong>Questionner le score et la donnée.</strong><small>Baseline, erreurs, raw data, preprocessing.</small></div>
-        <div><span>10</span><strong>Tester une hypothèse football.</strong><small>Feature engineering et ablation.</small></div>
+        <div><span>01–07</span><strong>Comprendre.</strong><small>Cible, features, modèles, train/test, overfitting.</small></div>
+        <div><span>08–12</span><strong>Mesurer.</strong><small>Baseline, données réelles, calibration, cross-validation.</small></div>
+        <div><span>13–15</span><strong>Construire.</strong><small>Arbre, tuning, sélection et atelier libre.</small></div>
+        <div><span>16</span><strong>Éprouver.</strong><small>Holdout de matchs jamais utilisés pour décider.</small></div>
       </div>
-      <div className="next-teaser wide"><span>Prochaine marche</span><strong>Vérifier si nos probabilités sont crédibles, puis si nos conclusions restent stables quand on change les données de validation.</strong><small>Calibration puis cross-validation — mais seulement après ton prochain playtest.</small></div>
-      <button className="secondary-button" onClick={onReview}>Rejouer le chapitre 10</button>
+      <div className="next-teaser wide"><span>Cycle suivant possible</span><strong>Quitter le tutoriel : analyser les erreurs, interpréter le modèle, produire un xG de match puis répondre à des questions football ouvertes.</strong></div>
+      <button className="secondary-button" onClick={onReview}>Rejouer le holdout</button>
     </div>
   )
 }
