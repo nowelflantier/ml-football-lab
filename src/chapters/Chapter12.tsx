@@ -1,75 +1,85 @@
 import { useState } from 'react'
 import { ContinueButton, Eyebrow, LabShell } from '../components/LabShell'
-import { ModelWorkbenchControls } from '../components/ModelWorkbench'
 import { UnderTheHood } from '../components/UnderTheHood'
 import { realShots } from '../data/realShots'
-import { modelLabel, type ModelConfig } from '../ml/modelLab'
 import { crossValidate } from '../ml/validation'
 
 type Props = { step: number; setStep: (step: number) => void; onComplete: () => void }
+type Run = { foldCount: number; result: ReturnType<typeof crossValidate> }
 
-type Run = { config: ModelConfig; foldCount: number; result: ReturnType<typeof crossValidate> }
-const initialConfig: ModelConfig = { family: 'logistic', features: ['distance', 'angle'], k: 7, depth: 3 }
+const fixedConfig = { family: 'logistic' as const, features: ['distance', 'angle'] as const }
 
 export function Chapter12({ step, setStep, onComplete }: Props) {
-  const [config, setConfig] = useState<ModelConfig>(initialConfig)
   const [foldCount, setFoldCount] = useState(5)
   const [runs, setRuns] = useState<Run[]>([])
 
   const execute = () => {
-    const result = crossValidate(realShots, config, foldCount, 0.25, 97)
-    setRuns((current) => [...current.slice(-6), { config: { ...config, features: [...config.features] }, foldCount, result }])
+    const result = crossValidate(realShots, { family: 'logistic', features: ['distance', 'angle'] }, foldCount, 0.25, 97)
+    setRuns((current) => [...current.slice(-5), { foldCount, result }])
   }
 
-  if (step === 0) {
-    return (
-      <LabShell visual={<div className="fold-intro"><div>TRAIN</div><b>→</b><div>TEST</div><b>?</b><div>autre TEST</div></div>}>
-        <Eyebrow>Chapitre 12 · Et si notre test était juste chanceux&nbsp;?</Eyebrow>
-        <h1>Un seul découpage peut raconter une histoire trompeuse.</h1>
-        <p className="lead">Au chapitre 04, tu as déjà vu le score bouger quand les tirs cachés changent. Avec plus de données, on peut faire mieux que choisir arbitrairement un seul test.</p>
-        <div className="intent-card"><strong>Ce que tu vas manipuler</strong><span>Le nombre de groupes de validation. Chaque groupe devient le test une fois, pendant que les autres servent à apprendre.</span></div>
-        <ContinueButton onClick={() => setStep(1)}>Ouvrir le labo de validation</ContinueButton>
-      </LabShell>
-    )
-  }
+  if (step === 0) return (
+    <LabShell visual={<RotatingExamVisual />}>
+      <Eyebrow>Chapitre 12 · Et si notre test était juste chanceux&nbsp;?</Eyebrow>
+      <h1>Un seul groupe de contrôle peut raconter une histoire particulière.</h1>
+      <p className="lead">Au chapitre 04, tu cachais une partie des tirs puis tu mesurais le modèle dessus. Mais un autre groupe caché pouvait donner un score différent. Alors, plutôt que choisir une seule feuille d’examen, on peut <b>faire tourner le rôle du test</b>.</p>
+      <div className="concrete-story-card"><span>Image mentale</span><strong>On coupe les données en plusieurs paquets.</strong><small>À chaque tour, un paquet est caché pour le test et tous les autres servent à apprendre. Puis on change de paquet caché.</small></div>
+      <ContinueButton onClick={() => setStep(1)}>Faire tourner les groupes</ContinueButton>
+    </LabShell>
+  )
 
   if (step === 1) {
     const latest = runs.at(-1)
-    const triedFoldCounts = new Set(runs.map((run) => run.foldCount)).size
+    const triedCounts = new Set(runs.map((run) => run.foldCount)).size
     return (
-      <LabShell visual={latest ? <FoldVisual run={latest} /> : <div className="empty-lab-visual"><strong>Pas encore de validation</strong><span>Choisis un protocole puis lance-le.</span></div>}>
-        <Eyebrow>Chapitre 12 · Cross-validation</Eyebrow>
-        <h1>Teste la même idée plusieurs fois sur des données différentes.</h1>
-        <p className="lead">Change le modèle si tu veux, mais joue surtout avec 3, 5 et 7 folds. Observe la moyenne et l’écart entre les folds.</p>
-        <ModelWorkbenchControls config={config} onChange={setConfig} />
+      <LabShell visual={latest ? <FoldPlainVisual run={latest} /> : <RotatingExamVisual />}>
+        <Eyebrow>12.1 · Même modèle, protocole différent</Eyebrow>
+        <h1>Tu ne règles plus le modèle. Tu règles seulement la façon de l’évaluer.</h1>
+        <p className="lead">Le modèle reste toujours le même&nbsp;: tendance logistique avec distance + angle. Choisis simplement en combien de groupes on découpe les tirs.</p>
+        <div className="fixed-model-card"><span>Fixé pour tout le chapitre</span><strong>Régression logistique · distance + angle</strong><small>Aucun autre réglage ne change pendant tes essais.</small></div>
         <div className="workbench-block inline-fold-control">
-          <span>3 · Combien de validations successives&nbsp;?</span>
-          <div className="segmented-control">{[3, 5, 7].map((count) => <button key={count} className={foldCount === count ? 'selected' : ''} onClick={() => setFoldCount(count)}>{count} folds</button>)}</div>
-          <small>Plus de folds = davantage de répétitions, avec des groupes de test plus petits.</small>
+          <span>Découper les données en…</span>
+          <div className="segmented-control">{[3, 5, 7].map((count) => <button key={count} className={foldCount === count ? 'selected' : ''} onClick={() => setFoldCount(count)}>{count} groupes</button>)}</div>
+          <small>Chaque groupe sera utilisé une fois comme test.</small>
         </div>
-        <button className="primary-lab-button" onClick={execute}>▶ Lancer la cross-validation</button>
-        {latest && <div className="cv-summary"><div><span>Brier moyen</span><strong>{latest.result.meanBrier.toFixed(3)}</strong></div><div><span>Accuracy moyenne</span><strong>{Math.round(latest.result.meanAccuracy * 100)}%</strong></div><div><span>Variation accuracy</span><strong>{Math.round(latest.result.accuracyRange * 100)} pts</strong></div></div>}
-        {runs.length > 0 && <div className="workbench-history compact">{runs.map((run, index) => <div key={index}><span>#{index + 1} · {modelLabel(run.config)} · {run.foldCount} folds</span><strong>{run.result.meanBrier.toFixed(3)} Brier</strong><small>± {Math.round(run.result.accuracyRange * 100)} pts accuracy</small></div>)}</div>}
-        <p className="practice-gate">{runs.length < 3 || triedFoldCounts < 2 ? 'Fais au moins 3 essais et teste au moins deux nombres de folds.' : 'Tu as assez varié le protocole pour comparer.'}</p>
-        {runs.length >= 3 && triedFoldCounts >= 2 && <ContinueButton onClick={() => setStep(2)}>Comprendre ce protocole</ContinueButton>}
+        <button className="primary-lab-button" onClick={execute}>▶ Faire tourner les {foldCount} tests</button>
+        {latest && <div className="cv-summary plain"><div><span>Moyenne des décisions justes</span><strong>{Math.round(latest.result.meanAccuracy * 100)}%</strong></div><div><span>Écart entre meilleur et pire groupe</span><strong>{Math.round(latest.result.accuracyRange * 100)} points</strong></div></div>}
+        {runs.length > 0 && <div className="workbench-history compact">{runs.map((run, index) => <div key={index}><span>#{index + 1} · {run.foldCount} groupes</span><strong>{Math.round(run.result.meanAccuracy * 100)}% en moyenne</strong><small>écart {Math.round(run.result.accuracyRange * 100)} pts</small></div>)}</div>}
+        {runs.length < 2 || triedCounts < 2 ? <p className="practice-gate">Lance au moins deux protocoles différents, par exemple 3 puis 7 groupes.</p> : <ContinueButton onClick={() => setStep(2)}>Comprendre ce que les répétitions apportent</ContinueButton>}
       </LabShell>
     )
   }
 
-  const latest = runs.at(-1)
+  if (step === 2) {
+    const latest = runs.at(-1)
+    return (
+      <LabShell visual={latest ? <FoldPlainVisual run={latest} /> : <RotatingExamVisual />}>
+        <Eyebrow>12.2 · Plusieurs mesures valent mieux qu’un chiffre isolé</Eyebrow>
+        <h1>Tu peux voir si ta conclusion dépend beaucoup du groupe choisi.</h1>
+        <p className="lead">Si tous les groupes donnent des résultats proches, l’évaluation paraît plus stable. S’ils varient beaucoup, annoncer un seul score sans contexte serait fragile.</p>
+        <div className="plain-explanation"><strong>Ce que le nombre de groupes change</strong><span>Avec davantage de groupes, chaque test contient moins de tirs mais on répète davantage l’expérience. Le nombre idéal n’est pas le sujet ici&nbsp;: le réflexe important est de <b>ne pas dépendre d’un unique découpage chanceux</b>.</span></div>
+        <ContinueButton onClick={() => setStep(3)}>Mettre un nom sur cette méthode</ContinueButton>
+      </LabShell>
+    )
+  }
+
   return (
-    <LabShell visual={latest ? <FoldVisual run={latest} /> : undefined}>
-      <Eyebrow>Cycle 2 terminé · Cross-validation</Eyebrow>
-      <h1>Évaluer un modèle, c’est concevoir une expérience.</h1>
-      <p className="lead">La cross-validation fait tourner le rôle du groupe de test. On obtient plusieurs scores plutôt qu’un chiffre unique, ce qui permet de voir si une conclusion est stable ou dépend d’un découpage chanceux.</p>
-      <div className="reveal-card"><span>Concept débloqué</span><strong>Cross-validation : répéter train/validation sur plusieurs folds et résumer la moyenne + la variabilité.</strong></div>
-      <UnderTheHood><p>Chaque tir appartient à un seul fold de validation. Pour chaque tour, le modèle est réentraîné de zéro sur tous les autres folds. Les folds sont stratifiés pour conserver approximativement la proportion de buts.</p></UnderTheHood>
-      <div className="checkpoint"><span>Fin du Cycle 2</span><strong>Tu sais maintenant questionner la donnée, les erreurs, les probabilités et le protocole d’évaluation. Le Cycle 3 va te demander de construire réellement des modèles.</strong></div>
-      <ContinueButton onClick={onComplete}>Entrer dans le Model Workshop</ContinueButton>
+    <LabShell visual={<RotatingExamVisual named />}>
+      <Eyebrow>Parcours guidé terminé · Cross-validation</Eyebrow>
+      <h1>Évaluer un modèle est aussi une expérience à concevoir.</h1>
+      <p className="lead"><strong>Cross-validation</strong> est le nom de la mécanique que tu viens de manipuler&nbsp;: faire tourner plusieurs groupes de validation pour obtenir plusieurs mesures plutôt qu’un score unique.</p>
+      <div className="reveal-card"><span>Concept débloqué</span><strong>Chaque exemple sert au test une fois, et à l’apprentissage les autres fois. On résume ensuite la performance moyenne et sa variabilité.</strong></div>
+      <UnderTheHood><p>Nos groupes sont stratifiés pour conserver approximativement la proportion de buts. Le modèle est réentraîné de zéro à chaque tour. On peut aussi résumer l’erreur probabiliste moyenne avec le Brier vu au chapitre précédent.</p></UnderTheHood>
+      <div className="checkpoint"><span>Fin du parcours guidé 01–12</span><strong>Tu sais maintenant ce qu’est une prédiction apprise, comment plusieurs familles la produisent, comment éviter les faux succès et comment tester si une conclusion tient sur de l’inconnu.</strong></div>
+      <ContinueButton onClick={onComplete}>Débloquer les ateliers de construction</ContinueButton>
     </LabShell>
   )
 }
 
-function FoldVisual({ run }: { run: Run }) {
-  return <div className="fold-board"><div className="fold-board-title"><span>{modelLabel(run.config)}</span><strong>{run.foldCount} folds</strong></div>{run.result.folds.map((fold) => <div key={fold.fold} className="fold-row"><span>Fold {fold.fold}</span><i style={{ width: `${fold.accuracy * 100}%` }} /><strong>{Math.round(fold.accuracy * 100)}%</strong><small>Brier {fold.brier.toFixed(3)} · {fold.size} tirs</small></div>)}</div>
+function RotatingExamVisual({ named = false }: { named?: boolean }) {
+  return <div className="rotating-exam-board"><div className="fold-box active">TEST</div><div className="fold-box">TRAIN</div><div className="fold-box">TRAIN</div><div className="fold-box">TRAIN</div><b>→ on tourne →</b><div className="fold-box">TRAIN</div><div className="fold-box active">TEST</div><div className="fold-box">TRAIN</div><div className="fold-box">TRAIN</div>{named && <strong>cross-validation</strong>}</div>
+}
+
+function FoldPlainVisual({ run }: { run: Run }) {
+  return <div className="fold-board"><div className="fold-board-title"><span>Modèle fixe</span><strong>{run.foldCount} groupes</strong></div>{run.result.folds.map((fold) => { const correct = Math.round(fold.accuracy * fold.size); return <div key={fold.fold} className="fold-row"><span>Test {fold.fold}</span><i style={{ width: `${fold.accuracy * 100}%` }} /><strong>{correct}/{fold.size}</strong><small>{Math.round(fold.accuracy * 100)}% de décisions justes</small></div> })}</div>
 }
