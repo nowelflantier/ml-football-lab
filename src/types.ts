@@ -37,7 +37,7 @@ export type Shot = {
   provenance?: ShotProvenance
 }
 
-export type ChapterId = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10
+export type ChapterId = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16
 
 export type Progress = {
   chapter: ChapterId
@@ -51,6 +51,12 @@ export type Progress = {
   chapter8Step: number
   chapter9Step: number
   chapter10Step: number
+  chapter11Step: number
+  chapter12Step: number
+  chapter13Step: number
+  chapter14Step: number
+  chapter15Step: number
+  chapter16Step: number
   manualThreshold: number
   completed: number[]
 }
