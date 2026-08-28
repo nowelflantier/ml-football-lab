@@ -1,130 +1,155 @@
 # Curriculum
 
-## Cycle 1 — From intuition to evaluation
+The product now distinguishes a **guided beginner path** (01–12) from optional advanced practice (13–20).
+
+The guided path follows one invariant:
+
+**concrete problem → learner prediction → manipulation → visible consequence → second attempt → explanation → technical name → optional depth**
+
+## Guided path A — Understand a prediction (01–06)
 
 ### 01 — Predict
-- manual distance rule;
-- prediction and error.
+- observe simple shot data;
+- make predictions;
+- build a manual distance rule;
+- experience prediction error.
 
 ### 02 — Learn
-- first browser-side logistic model;
-- human rule vs learned relationship.
+- give examples to the computer instead of writing the rule;
+- first learned probability curve;
+- understand `model` as a learned relation.
 
 ### 03 — Describe
+- feel why distance alone is insufficient;
 - add angle;
-- feature intuition.
+- introduce `feature` only after the missing-information problem appears.
 
 ### 04 — Test
-- train/test;
+- expose the problem of evaluating on already-seen examples;
+- train/test split;
 - repeated reshuffles;
 - generalisation.
 
 ### 05 — Probabilise
-- probability as frequency;
+- low probability does not mean impossible;
+- estimate probabilities manually;
+- add probabilities across shots;
 - xG intuition.
 
-### 06 — Distrust perfect scores
-- overfitting;
-- leakage.
+### 06 — Three ways to predict
+- same single input: shot distance;
+- method A: learn a smooth global trend;
+- method B: use similar past examples;
+- method C: follow learned if/then rules;
+- reveal `logistic regression`, `k-NN`, and `decision tree` only after the mechanism is understood.
 
-### 07 — Compare
-- logistic vs k-NN;
-- first mini-lab;
-- hyperparameter intuition.
+## Guided path B — Trust the experiment (07–12)
 
-## Cycle 2 — Make the experiment credible
+### 07 — Overfit
+- use the already-understood neighbour method;
+- deliberately optimise performance on known examples;
+- see k=1 reach a perfect train score because each training shot can be its own neighbour;
+- compare known vs unseen performance;
+- name overfitting afterwards.
 
 ### 08 — Measure
 - class imbalance;
-- naive baseline;
-- error types and confusion matrix.
+- naive always-no-goal baseline;
+- threshold tradeoff;
+- plain-language error types before confusion-matrix terminology.
 
 ### 09 — Prepare
-- real StatsBomb source data;
+- exact StatsBomb raw excerpt;
 - raw event → model-ready row;
+- source vs derived columns;
 - provenance and preprocessing.
 
-### 10 — Enrich
-- feature engineering;
-- categorical encoding;
-- ablation on unseen data.
+### 10 — Enrich, then detect leakage
+- test one legitimate feature at a time;
+- primary result shown as `correct decisions / test shots`, with percentage secondary;
+- explicitly distinguish model performance from feature value / importance;
+- add a post-outcome column and observe the suspicious score jump;
+- introduce feature engineering and data leakage together because they answer the same question: which columns are legitimate inputs?
 
 ### 11 — Calibrate
-- learner-configurable probability experiments;
-- reliability buckets;
-- Brier score;
-- probability quality vs classification quality.
+- one fixed model only;
+- weather-forecast analogy;
+- `0–20%` explained as the group of shots assigned probabilities in that range;
+- expected goals in the group vs observed goals;
+- introduce calibration after the bucket interpretation is clear;
+- Brier only as optional summary depth.
 
-### 12 — Validate
-- learner-configurable cross-validation;
-- folds;
-- mean performance and variability;
-- fair comparison under a shared protocol.
+### 12 — Validate repeatedly
+- one fixed model only;
+- rotate which group is hidden for testing;
+- manipulate only 3 / 5 / 7 folds;
+- compare average performance and variability;
+- introduce cross-validation afterwards.
 
-## Cycle 3 — Model Workshop
+At the end of Chapter 12, the beginner guided path is complete.
 
-### 13 — Build a decision tree
-- real browser-side decision tree;
-- depth, minimum branch size and feature controls;
-- train vs test behaviour and learned first rule.
+## Optional advanced practice — Model Workshop (13–16)
+
+The controls here are allowed to become denser because every major control has already been introduced separately in the guided path.
+
+### 13 — Decision-tree capacity
+- depth and minimum branch size;
+- train vs test behaviour;
+- learned rules and node count.
 
 ### 14 — Tune without consuming the final test
 - explicit train / validation / test split;
-- tune k-NN or tree settings on validation;
-- choose before revealing test.
+- hyperparameter tuning on validation;
+- final test remains locked until a candidate is selected.
 
 ### 15 — Open Model Workshop
 - free feature selection;
 - logistic / k-NN / tree;
 - hyperparameters, threshold and folds;
-- run history and direction relative to a fixed baseline;
-- learner selects and defends a candidate.
+- experiment history;
+- direction relative to an explicit baseline, not a hidden correct answer.
 
-### 16 — Holdout challenge
-- three complete StatsBomb matches outside development;
-- iterate only on the remaining matches with CV;
-- freeze a candidate before holdout reveal;
-- compare candidate, simple baseline and StatsBomb xG reference.
+### 16 — Match-level holdout challenge
+- entire matches withheld from development;
+- iterate on the development set;
+- freeze a candidate;
+- reveal the untouched holdout only afterwards;
+- compare learner model, simple baseline and StatsBomb xG reference.
 
-## Cycle 4 — Football Analyst Mode
+## Optional application — Football Analyst Mode (17–20)
 
-Cycle 4 intentionally stops teaching one new definition per chapter. The model becomes an instrument for asking football questions.
+No hidden answer is expected here. The model becomes an instrument for football analysis.
 
 ### 17 — Diagnose errors
-- configure a model and threshold;
-- generate concrete errors on unseen shots;
-- filter missed goals, false alerts and high-confidence errors;
-- inspect player / team / geometry / context;
-- rerun modified model versions and use errors to generate new hypotheses.
+- filter real missed goals / false alerts / confident mistakes;
+- inspect concrete shots;
+- form new hypotheses.
 
 ### 18 — What-if lab
-- pick real shots;
-- modify distance, angle, header, penalty, pressure and first-time status;
-- compare logistic, k-NN and tree probabilities live;
-- experience sensitivity / counterfactual analysis while keeping the non-causal caveat explicit.
+- modify one shot feature at a time;
+- compare model reactions;
+- distinguish sensitivity from causality.
 
-### 19 — Build a real match xG
-- choose one of the 10 StatsBomb matches;
-- exclude that match from training;
-- predict every shot with a learner-configured model;
-- aggregate team xG;
-- inspect model xG vs StatsBomb xG vs actual outcome shot by shot.
+### 19 — Match xG builder
+- train without the selected match;
+- predict every shot in that match;
+- aggregate by team;
+- compare learner xG, StatsBomb xG and real outcomes.
 
-### 20 — Open analyst dashboard
-- leave-one-match-out prediction across all 10 matches;
-- team-match table;
-- sort by goals-over-xG, goals-under-xG or model-vs-StatsBomb disagreement;
-- drill down from an interesting row to individual shots;
-- rerun the entire dashboard with another model configuration.
+### 20 — Analyst dashboard
+- leave-one-match-out across all 10 matches;
+- sort team-match rows by over/underperformance or disagreement;
+- drill down into shots;
+- rerun with another model configuration.
 
-## After the guided path
+## Future work
 
-Do not automatically add another numbered tutorial cycle.
+Do not add another numbered cycle automatically. New techniques should be introduced because a real football question requires them.
 
-Future work should be triggered by a football question and may require:
-- more seasons / matches;
-- ensembles or gradient boosting;
-- richer interpretation;
-- player and team profiling;
+Possible later needs:
+- more matches / seasons;
+- ensembles / gradient boosting;
+- richer model interpretation;
+- player / team profiling;
 - clustering / similarity;
 - tracking or StatsBomb 360 data.
